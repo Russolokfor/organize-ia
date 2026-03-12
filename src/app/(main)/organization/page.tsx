@@ -1,0 +1,165 @@
+'use client'
+
+import * as React from 'react'
+import { motion } from 'framer-motion'
+import { useTasks } from '@/components/tasks/TaskProvider'
+import { Card, CardContent } from '@/components/ui/card'
+import { TaskItem } from '@/components/tasks/TaskItem'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Calendar, Clock, Plus, Target } from 'lucide-react'
+import { TaskFilterScope, TaskFilterStatus } from '@/types'
+
+export default function OrganizationPage() {
+  const { tasks, addTask, refresh, loading } = useTasks()
+  const [title, setTitle] = React.useState('')
+  const [dueDate, setDueDate] = React.useState('')
+  const [duration, setDuration] = React.useState('30')
+  const [priority, setPriority] = React.useState<'1'|'2'|'3'>('3')
+  
+  const [statusFilter, setStatusFilter] = React.useState<TaskFilterStatus>('all')
+  const [scopeFilter, setScopeFilter] = React.useState<TaskFilterScope>('all')
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!title.trim()) return
+    await addTask({
+      title,
+      due_date: dueDate || null,
+      duration_min: parseInt(duration) || 30,
+      priority: parseInt(priority) as 1 | 2 | 3
+    })
+    setTitle('')
+    setDueDate('')
+    setDuration('30')
+    setPriority('3')
+  }
+
+  React.useEffect(() => {
+    refresh({ status: statusFilter, scope: scopeFilter })
+  }, [statusFilter, scopeFilter, refresh])
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-6 max-w-4xl mx-auto pb-12"
+    >
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Organização</h1>
+        <p className="text-muted-foreground mt-1 text-sm md:text-base">
+          Painel geral para criar, filtrar e organizar o que você vai executar.
+        </p>
+      </div>
+
+      <Card className="bg-primary/5 border-primary/20 backdrop-blur-2xl overflow-visible relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent pointer-events-none rounded-2xl" />
+        <CardContent className="p-4 md:p-6 relative z-10">
+          <form onSubmit={handleCreate} className="space-y-4">
+            <div className="flex bg-background/50 backdrop-blur rounded-xl border border-border/50 p-1 shadow-inner focus-within:ring-2 focus-within:ring-primary/50 transition-all">
+              <input
+                type="text"
+                placeholder="O que você precisa fazer?"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                className="w-full bg-transparent px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none placeholder:font-medium"
+                required
+              />
+              <Button type="submit" size="icon" className="h-12 w-12 rounded-lg shrink-0" disabled={!title.trim() || loading}>
+                <Plus className="w-5 h-5" />
+              </Button>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-3 md:gap-4 px-1">
+              <div className="flex items-center gap-2 bg-background/40 backdrop-blur px-3 py-1.5 border border-border/50 rounded-lg shadow-sm">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <input 
+                  type="date" 
+                  value={dueDate}
+                  onChange={e => setDueDate(e.target.value)}
+                  className="bg-transparent text-sm focus:outline-none text-foreground color-scheme-dark"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 bg-background/40 backdrop-blur px-3 py-1.5 border border-border/50 rounded-lg shadow-sm">
+                <Clock className="w-4 h-4 text-muted-foreground" />
+                <select 
+                  value={duration} 
+                  onChange={e => setDuration(e.target.value)}
+                  className="bg-transparent text-sm focus:outline-none text-foreground appearance-none"
+                >
+                  <option value="15" className="bg-card">15 min</option>
+                  <option value="30" className="bg-card">30 min</option>
+                  <option value="60" className="bg-card">1 hora</option>
+                  <option value="120" className="bg-card">2 horas</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2 bg-background/40 backdrop-blur px-3 py-1.5 border border-border/50 rounded-lg shadow-sm">
+                <Target className="w-4 h-4 text-muted-foreground" />
+                <select 
+                  value={priority} 
+                  onChange={e => setPriority(e.target.value as any)}
+                  className="bg-transparent text-sm focus:outline-none text-foreground appearance-none"
+                >
+                  <option value="1" className="bg-card text-danger">P1 Alta</option>
+                  <option value="2" className="bg-card text-warning">P2 Média</option>
+                  <option value="3" className="bg-card text-muted-foreground">P3 Baixa</option>
+                </select>
+              </div>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-8">
+        <h2 className="font-semibold px-1">Todas as Tarefas ({tasks.length})</h2>
+        <div className="flex items-center gap-2 self-start md:self-auto w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+          <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as any)}
+            className="text-sm bg-card border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <option value="all">Ver todas</option>
+            <option value="planned">Planejadas</option>
+            <option value="done">Concluídas</option>
+          </select>
+
+          <select 
+            value={scopeFilter}
+            onChange={(e) => setScopeFilter(e.target.value as any)}
+            className="text-sm bg-card border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <option value="all">Todo o tempo</option>
+            <option value="today">Hoje</option>
+            <option value="next7">Próximos 7 dias</option>
+            <option value="overdue">Atrasadas</option>
+            <option value="no_due_date">Sem prazo</option>
+          </select>
+        </div>
+      </div>
+
+      <motion.div layout className="flex flex-col gap-2">
+        {loading && tasks.length === 0 ? (
+          <div className="animate-pulse space-y-3">
+            {[1,2,3].map(i => <div key={i} className="h-16 bg-muted/50 rounded-2xl w-full"></div>)}
+          </div>
+        ) : tasks.length === 0 ? (
+          <div className="p-12 text-center rounded-3xl border border-dashed border-border/50 bg-card/10">
+            <div className="w-16 h-16 mx-auto bg-muted rounded-2xl flex items-center justify-center mb-4 text-muted-foreground">
+              <span className="text-2xl">🌱</span>
+            </div>
+            <h3 className="text-lg font-medium text-foreground">Sua lista está vazia</h3>
+            <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
+              Comece adicionando tarefas no campo acima. Tire os pensamentos da cabeça e coloque no sistema.
+            </p>
+          </div>
+        ) : (
+          tasks.map(task => (
+            <TaskItem key={task.id} task={task} />
+          ))
+        )}
+      </motion.div>
+    </motion.div>
+  )
+}

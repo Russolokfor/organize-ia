@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Organize.ia
 
-## Getting Started
+Organize.ia é uma aplicação web premium de produtividade, projetada para transformar suas tarefas em uma rotina diária executável. Ela evita a complexidade de sistemas como o Notion ou Trello, focando puramente em: **organização → definição da rotina → execução → medição de desempenho**.
 
-First, run the development server:
+Feita com Next.js 15, Tailwind CSS v4, Framer Motion, e Supabase.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Arquitetura 
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Frontend**: Next.js App Router com Server Components onde possível, e Client Components hidratados para interações ricas (Framer Motion).
+- **Estilização**: Tailwind CSS v4 com `globals.css` definindo variáveis de um tema escuro e visual premium.
+- **Backend / Auth**: Supabase. Usado para autenticação segura e banco de dados rápido, garantido via RLS (Row Level Security).
+- **Integração de IA**: Rota `/api/ai/parse` capaz de interceptar inputs em texto livre ("brain dumps") e estruturar rapidamente em blocos acionáveis de tempo com prioridade. Utiliza a API do Gemini. 
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Como Configurar
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Conta Supabase**:
+   Crie um projeto no Supabase (https://supabase.com). 
+   Na raiz do repositório, encontre o arquivo `supabase_schema.sql` e execute-o dentro da interface do SQL Editor do seu projeto Supabase. Ele cuidará de criar a tabela `tasks` e todas as regras de segurança necessárias (RLS).
 
-## Learn More
+2. **Variáveis de Ambiente**:
+   Copie `.env.local.example` para `.env.local` e insira as credenciais do seu projeto:
 
-To learn more about Next.js, take a look at the following resources:
+   ```bash
+   NEXT_PUBLIC_SUPABASE_URL=sua_url_aqui
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_anon_key_aqui
+   GEMINI_API_KEY=sua_api_key_do_google_gemini
+   ```
+   *(Nota: A API do Gemini é opcional; se não declarada, o sistema usa uma lógica mock inteligente no lugar.)*
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. **Rodando a Aplicação**:
+   Instale as dependências com `npm install`, depois inicie o servidor:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   ```bash
+   npm run dev
+   ```
+   Acesse a aplicação em `http://localhost:3000`. Crie uma conta no formulário de Login.
 
-## Deploy on Vercel
+## Melhorias Futuras
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+A arquitetura foi pensada para escalar. Algumas implementações futuras:
+- Subtarefas (`parent_id` na tabela `tasks`).
+- Energias e categorias avançadas.
+- Sincronização offline ou persistência de caches no `TaskProvider`.
+- Testes automatizados (E2E) com Playwright.
