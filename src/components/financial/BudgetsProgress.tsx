@@ -18,13 +18,13 @@ export function BudgetsProgress() {
   }
 
   return (
-    <Card className="bg-card/40 backdrop-blur-sm border-border/50">
+    <Card className="bg-surface-card backdrop-blur-sm border-border-default shadow-card">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-medium">Orçamento Mensal</CardTitle>
+        <CardTitle className="text-lg font-medium text-text-primary">Orçamento Mensal</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {budgets.length === 0 ? (
-          <p className="text-muted-foreground text-sm py-2">Nenhum orçamento definido para este mês.</p>
+          <p className="text-text-secondary text-sm py-2">Nenhum orçamento definido para este mês.</p>
         ) : (
           budgets.map((budget) => {
             const spent = getSpentForCategory(budget.category)
@@ -35,14 +35,14 @@ export function BudgetsProgress() {
             return (
               <div key={budget.id} className="space-y-1">
                 <div className="flex justify-between text-sm">
-                  <span className="font-medium">{budget.category}</span>
-                  <span className={isOver ? 'text-danger font-medium' : 'text-muted-foreground'}>
+                  <span className="font-medium text-text-primary">{budget.category}</span>
+                  <span className={isOver ? 'text-status-error font-medium' : 'text-text-secondary'}>
                     {formatCurrency(spent)} / {formatCurrency(limit)}
                   </span>
                 </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div className="h-2 bg-surface-subtle rounded-full overflow-hidden">
                   <div 
-                    className={`h-full rounded-full transition-all ${isOver ? 'bg-danger' : pct > 80 ? 'bg-warning' : 'bg-primary'}`}
+                    className={`h-full rounded-full transition-all ${isOver ? 'bg-status-error' : pct > 80 ? 'bg-status-warning' : 'bg-action-primary'}`}
                     style={{ width: `${pct}%` }}
                   />
                 </div>

@@ -21,9 +21,9 @@ export function FinancialCharts() {
   }, [entries])
 
   return (
-    <Card className="bg-card/40 backdrop-blur-sm border-border/50">
+    <Card className="bg-surface-card backdrop-blur-sm border-border-default shadow-card">
       <CardHeader>
-        <CardTitle className="text-lg font-medium">Fluxo Mensal (Visão Geral)</CardTitle>
+        <CardTitle className="text-lg font-medium text-text-primary">Fluxo Mensal (Visão Geral)</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[250px] w-full">
@@ -43,8 +43,8 @@ export function FinancialCharts() {
               <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `R$${value}`} />
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#333333" />
               <Tooltip 
-                contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
-                itemStyle={{ color: 'hsl(var(--foreground))' }}
+                contentStyle={{ backgroundColor: 'var(--color-surface-card)', borderColor: 'var(--color-border-default)', borderRadius: '8px' }}
+                itemStyle={{ color: 'var(--color-text-primary)' }}
                 formatter={(value: any) => [`R$ ${value}`, '']}
               />
               <Area type="monotone" dataKey="income" name="Entradas" stroke="rgb(34, 197, 94)" fillOpacity={1} fill="url(#colorIncome)" />

@@ -15,65 +15,65 @@ export function FinancialSummaryCards() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* Saldo Principal */}
-      <Card className="bg-card/40 hover:bg-card/60 transition-colors">
+      <Card className="bg-surface-card border-border-default shadow-sm hover:border-border-subtle transition-colors">
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-primary/10 text-primary">
+            <div className="p-3 rounded-xl bg-action-primary/10 text-action-primary">
               <DollarSign className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Saldo do Mês</p>
-              <p className="text-2xl font-bold">{currencyValue(metrics.balance)}</p>
+              <p className="text-sm font-medium text-text-secondary">Saldo do Mês</p>
+              <p className="text-2xl font-bold text-text-primary">{currencyValue(metrics.balance)}</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Receitas */}
-      <Card className="bg-card/40 hover:bg-card/60 transition-colors">
+      <Card className="bg-surface-card border-border-default shadow-sm hover:border-border-subtle transition-colors">
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-success/10 text-success">
+            <div className="p-3 rounded-xl bg-status-success/10 text-status-success">
               <ArrowUpRight className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Total de Receitas</p>
-              <p className="text-2xl font-bold">{currencyValue(metrics.totalIncome)}</p>
+              <p className="text-sm font-medium text-text-secondary">Total de Receitas</p>
+              <p className="text-2xl font-bold text-text-primary">{currencyValue(metrics.totalIncome)}</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Despesas Gerais */}
-      <Card className="bg-card/40 hover:bg-card/60 transition-colors">
+      <Card className="bg-surface-card border-border-default shadow-sm hover:border-border-subtle transition-colors">
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-warning/10 text-warning">
+            <div className="p-3 rounded-xl bg-status-warning/10 text-status-warning">
               <ArrowDownRight className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Despesas Mapeadas</p>
-              <p className="text-2xl font-bold text-warning">{currencyValue(metrics.totalExpense)}</p>
-              <p className="text-xs text-muted-foreground mt-1">Comprometido: {currencyValue(metrics.committedAmount)}</p>
+              <p className="text-sm font-medium text-text-secondary">Despesas Mapeadas</p>
+              <p className="text-2xl font-bold text-status-warning">{currencyValue(metrics.totalExpense)}</p>
+              <p className="text-xs text-text-secondary mt-1">Comprometido: {currencyValue(metrics.committedAmount)}</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Contas em Risco */}
-      <Card className="border-danger/20 bg-danger/5">
+      <Card className="border-status-error/20 bg-status-error/5 shadow-sm hover:border-status-error/40 transition-colors">
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-danger/20 text-danger">
+            <div className="p-3 rounded-xl bg-status-error/20 text-status-error">
               <AlertTriangle className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-danger/80">Situação de Pendências</p>
-              <p className="text-2xl font-bold text-danger">
+              <p className="text-sm font-medium text-status-error/80">Situação de Pendências</p>
+              <p className="text-2xl font-bold text-status-error">
                 {metrics.overdueBillsCount} 
-                <span className="text-lg font-medium text-muted-foreground ml-2">vencidas</span>
+                <span className="text-lg font-medium text-text-secondary ml-2">vencidas</span>
               </p>
-              <p className="text-xs text-muted-foreground mt-1">{metrics.pendingBillsCount} abertas aguardando</p>
+              <p className="text-xs text-text-secondary mt-1">{metrics.pendingBillsCount} abertas aguardando</p>
             </div>
           </div>
         </CardContent>

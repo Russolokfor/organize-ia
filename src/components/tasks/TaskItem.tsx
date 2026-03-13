@@ -5,6 +5,8 @@ import { useTasks } from './TaskProvider'
 import { Check, Clock, GripVertical, MoreVertical, Pin, Trash2, Calendar } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { format, parseISO } from 'date-fns'
+import { EditTaskModal } from './EditTaskModal'
+import { Pencil } from 'lucide-react'
 
 interface TaskItemProps {
   task: Task
@@ -14,6 +16,7 @@ interface TaskItemProps {
 export function TaskItem({ task, showDragHandle }: TaskItemProps) {
   const { toggleTaskDone, pinTaskToday, deleteTask } = useTasks()
   const [showOptions, setShowOptions] = React.useState(false)
+  const [isEditModalOpen, setEditModalOpen] = React.useState(false)
 
   const isDone = task.status === 'done'
 
@@ -98,6 +101,15 @@ export function TaskItem({ task, showDragHandle }: TaskItemProps) {
             </button>
             <button
               onClick={() => {
+                setShowOptions(false)
+                setEditModalOpen(true)
+              }}
+              className="px-4 py-2 text-sm text-left hover:bg-muted/50 flex items-center gap-2"
+            >
+              <Pencil className="w-4 h-4" /> Editar
+            </button>
+            <button
+              onClick={() => {
                 deleteTask(task.id)
                 setShowOptions(false)
               }}
@@ -112,6 +124,12 @@ export function TaskItem({ task, showDragHandle }: TaskItemProps) {
       {showOptions && (
         <div className="fixed inset-0 z-0" onClick={() => setShowOptions(false)} />
       )}
+
+      <EditTaskModal 
+        task={task} 
+        isOpen={isEditModalOpen} 
+        onClose={() => setEditModalOpen(false)} 
+      />
     </motion.div>
   )
 }

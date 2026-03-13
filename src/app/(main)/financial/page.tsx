@@ -10,14 +10,16 @@ import { BillsDue } from '@/components/financial/BillsDue'
 import { BudgetsProgress } from '@/components/financial/BudgetsProgress'
 import { GoalsProgress } from '@/components/financial/GoalsProgress'
 import { TransactionModal, BudgetModal, GoalModal } from '@/components/financial/FinancialForms'
+import { StatementUploadModal } from '@/components/financial/StatementUploadModal'
 import { Button } from '@/components/ui/button'
-import { Plus } from 'lucide-react'
+import { Plus, Wand2 } from 'lucide-react'
 
 export default function FinancialPage() {
   const { loading, referenceMonth, setReferenceMonth } = useFinancial()
   const [isTransactionModalOpen, setTransactionModalOpen] = React.useState(false)
   const [isBudgetModalOpen, setBudgetModalOpen] = React.useState(false)
   const [isGoalModalOpen, setGoalModalOpen] = React.useState(false)
+  const [isStatementModalOpen, setStatementModalOpen] = React.useState(false)
 
   if (loading) {
     return <div className="p-8 animate-pulse">Carregando dados financeiros...</div>
@@ -42,17 +44,20 @@ export default function FinancialPage() {
     >
       <div className="flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Portal Financeiro</h1>
-          <p className="text-muted-foreground mt-1">Clareza no fluxo de caixa e compromissos do mês.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-text-primary">Portal Financeiro</h1>
+          <p className="text-text-secondary mt-1">Clareza no fluxo de caixa e compromissos do mês.</p>
         </div>
         
         <div className="flex items-center gap-4">
-          <div className="flex items-center bg-card border border-border/50 rounded-xl shadow-sm p-1">
-            <button onClick={() => handleMonthChange(-1)} className="px-3 py-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors">&lt;</button>
-            <span className="px-4 font-medium text-sm capitalize">{monthName}</span>
-            <button onClick={() => handleMonthChange(1)} className="px-3 py-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors">&gt;</button>
+          <div className="flex items-center bg-surface-card border border-border-default rounded-xl shadow-sm p-1">
+            <button onClick={() => handleMonthChange(-1)} className="px-3 py-1.5 text-text-secondary hover:text-text-primary hover:bg-surface-subtle rounded-lg transition-colors">&lt;</button>
+            <span className="px-4 font-medium text-sm capitalize text-text-primary">{monthName}</span>
+            <button onClick={() => handleMonthChange(1)} className="px-3 py-1.5 text-text-secondary hover:text-text-primary hover:bg-surface-subtle rounded-lg transition-colors">&gt;</button>
           </div>
-          <Button className="rounded-xl shadow-md" onClick={() => setTransactionModalOpen(true)}>
+          <Button variant="outline" className="rounded-xl shadow-sm border-action-primary/20 hover:bg-surface-subtle hidden md:flex" onClick={() => setStatementModalOpen(true)}>
+            <Wand2 className="w-4 h-4 mr-2 text-action-primary" /> Importar Extrato
+          </Button>
+          <Button className="rounded-xl shadow-md bg-action-primary text-text-on-brand hover:bg-action-primary-hover" onClick={() => setTransactionModalOpen(true)}>
             <Plus className="w-4 h-4 mr-2" /> Nova Transação
           </Button>
         </div>
@@ -70,7 +75,7 @@ export default function FinancialPage() {
           
           <div className="space-y-2">
             <div className="flex justify-end pr-1">
-              <button className="text-xs font-semibold text-primary hover:underline flex items-center gap-1" onClick={() => setBudgetModalOpen(true)}>
+              <button className="text-xs font-semibold text-action-primary hover:text-action-primary-hover flex items-center gap-1" onClick={() => setBudgetModalOpen(true)}>
                 <Plus className="w-3 h-3"/> Novo Orçamento
               </button>
             </div>
@@ -79,7 +84,7 @@ export default function FinancialPage() {
 
           <div className="space-y-2">
             <div className="flex justify-end pr-1">
-              <button className="text-xs font-semibold text-primary hover:underline flex items-center gap-1" onClick={() => setGoalModalOpen(true)}>
+              <button className="text-xs font-semibold text-action-primary hover:text-action-primary-hover flex items-center gap-1" onClick={() => setGoalModalOpen(true)}>
                 <Plus className="w-3 h-3"/> Nova Meta
               </button>
             </div>
@@ -91,6 +96,7 @@ export default function FinancialPage() {
       <TransactionModal isOpen={isTransactionModalOpen} onClose={() => setTransactionModalOpen(false)} />
       <BudgetModal isOpen={isBudgetModalOpen} onClose={() => setBudgetModalOpen(false)} />
       <GoalModal isOpen={isGoalModalOpen} onClose={() => setGoalModalOpen(false)} />
+      <StatementUploadModal isOpen={isStatementModalOpen} onClose={() => setStatementModalOpen(false)} />
     </motion.div>
   )
 }

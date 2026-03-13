@@ -46,23 +46,23 @@ export default function OrganizationPage() {
       className="space-y-6 max-w-4xl mx-auto pb-12"
     >
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Organização</h1>
-        <p className="text-muted-foreground mt-1 text-sm md:text-base">
+        <h1 className="text-3xl font-bold tracking-tight text-text-primary">Organização</h1>
+        <p className="text-text-secondary mt-1 text-sm md:text-base">
           Painel geral para criar, filtrar e organizar o que você vai executar.
         </p>
       </div>
 
-      <Card className="bg-primary/5 border-primary/20 backdrop-blur-2xl overflow-visible relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent pointer-events-none rounded-2xl" />
+      <Card className="bg-action-primary/5 border-action-primary/20 backdrop-blur-2xl overflow-visible relative shadow-none">
+        <div className="absolute inset-0 bg-gradient-to-r from-action-primary/10 to-transparent pointer-events-none rounded-2xl" />
         <CardContent className="p-4 md:p-6 relative z-10">
           <form onSubmit={handleCreate} className="space-y-4">
-            <div className="flex bg-background/50 backdrop-blur rounded-xl border border-border/50 p-1 shadow-inner focus-within:ring-2 focus-within:ring-primary/50 transition-all">
+            <div className="flex bg-surface-card backdrop-blur rounded-xl border border-border-default p-1 shadow-inner focus-within:ring-2 focus-within:ring-action-primary/50 transition-all">
               <input
                 type="text"
                 placeholder="O que você precisa fazer?"
                 value={title}
                 onChange={e => setTitle(e.target.value)}
-                className="w-full bg-transparent px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none placeholder:font-medium"
+                className="w-full bg-transparent px-4 py-3 text-base text-text-primary placeholder:text-text-secondary focus:outline-none placeholder:font-medium"
                 required
               />
               <Button type="submit" size="icon" className="h-12 w-12 rounded-lg shrink-0" disabled={!title.trim() || loading}>
@@ -70,41 +70,41 @@ export default function OrganizationPage() {
               </Button>
             </div>
             
-            <div className="flex flex-wrap items-center gap-3 md:gap-4 px-1">
-              <div className="flex items-center gap-2 bg-background/40 backdrop-blur px-3 py-1.5 border border-border/50 rounded-lg shadow-sm">
-                <Calendar className="w-4 h-4 text-muted-foreground" />
+            <div className="flex flex-wrap items-center gap-3 md:gap-4 px-1 mt-4">
+              <div className="flex items-center gap-2 bg-surface-card backdrop-blur px-3 py-1.5 border border-border-default rounded-lg shadow-sm">
+                <Calendar className="w-4 h-4 text-text-secondary" />
                 <input 
                   type="date" 
                   value={dueDate}
                   onChange={e => setDueDate(e.target.value)}
-                  className="bg-transparent text-sm focus:outline-none text-foreground color-scheme-dark"
+                  className="bg-transparent text-sm focus:outline-none text-text-primary color-scheme-dark"
                 />
               </div>
 
-              <div className="flex items-center gap-2 bg-background/40 backdrop-blur px-3 py-1.5 border border-border/50 rounded-lg shadow-sm">
-                <Clock className="w-4 h-4 text-muted-foreground" />
+              <div className="flex items-center gap-2 bg-surface-card backdrop-blur px-3 py-1.5 border border-border-default rounded-lg shadow-sm">
+                <Clock className="w-4 h-4 text-text-secondary" />
                 <select 
                   value={duration} 
                   onChange={e => setDuration(e.target.value)}
-                  className="bg-transparent text-sm focus:outline-none text-foreground appearance-none"
+                  className="bg-transparent text-sm focus:outline-none text-text-primary appearance-none"
                 >
-                  <option value="15" className="bg-card">15 min</option>
-                  <option value="30" className="bg-card">30 min</option>
-                  <option value="60" className="bg-card">1 hora</option>
-                  <option value="120" className="bg-card">2 horas</option>
+                  <option value="15" className="bg-surface-elevated text-text-primary">15 min</option>
+                  <option value="30" className="bg-surface-elevated text-text-primary">30 min</option>
+                  <option value="60" className="bg-surface-elevated text-text-primary">1 hora</option>
+                  <option value="120" className="bg-surface-elevated text-text-primary">2 horas</option>
                 </select>
               </div>
 
-              <div className="flex items-center gap-2 bg-background/40 backdrop-blur px-3 py-1.5 border border-border/50 rounded-lg shadow-sm">
-                <Target className="w-4 h-4 text-muted-foreground" />
+              <div className="flex items-center gap-2 bg-surface-card backdrop-blur px-3 py-1.5 border border-border-default rounded-lg shadow-sm">
+                <Target className="w-4 h-4 text-text-secondary" />
                 <select 
                   value={priority} 
                   onChange={e => setPriority(e.target.value as any)}
-                  className="bg-transparent text-sm focus:outline-none text-foreground appearance-none"
+                  className="bg-transparent text-sm focus:outline-none text-text-primary appearance-none"
                 >
-                  <option value="1" className="bg-card text-danger">P1 Alta</option>
-                  <option value="2" className="bg-card text-warning">P2 Média</option>
-                  <option value="3" className="bg-card text-muted-foreground">P3 Baixa</option>
+                  <option value="1" className="bg-surface-elevated text-status-error font-bold">P1 Alta</option>
+                  <option value="2" className="bg-surface-elevated text-status-warning font-bold">P2 Média</option>
+                  <option value="3" className="bg-surface-elevated text-text-secondary">P3 Baixa</option>
                 </select>
               </div>
             </div>
@@ -113,12 +113,12 @@ export default function OrganizationPage() {
       </Card>
 
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-8">
-        <h2 className="font-semibold px-1">Todas as Tarefas ({tasks.length})</h2>
+        <h2 className="font-semibold px-1 text-text-primary">Todas as Tarefas ({tasks.length})</h2>
         <div className="flex items-center gap-2 self-start md:self-auto w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
           <select 
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="text-sm bg-card border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
+            className="text-sm bg-surface-card border border-border-default rounded-lg px-3 py-2 text-text-primary focus:outline-none ring-offset-surface-page focus-visible:ring-2 focus-visible:ring-border-focus"
           >
             <option value="all">Ver todas</option>
             <option value="planned">Planejadas</option>
@@ -128,7 +128,7 @@ export default function OrganizationPage() {
           <select 
             value={scopeFilter}
             onChange={(e) => setScopeFilter(e.target.value as any)}
-            className="text-sm bg-card border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
+            className="text-sm bg-surface-card border border-border-default rounded-lg px-3 py-2 text-text-primary focus:outline-none ring-offset-surface-page focus-visible:ring-2 focus-visible:ring-border-focus"
           >
             <option value="all">Todo o tempo</option>
             <option value="today">Hoje</option>
@@ -142,15 +142,15 @@ export default function OrganizationPage() {
       <motion.div layout className="flex flex-col gap-2">
         {loading && tasks.length === 0 ? (
           <div className="animate-pulse space-y-3">
-            {[1,2,3].map(i => <div key={i} className="h-16 bg-muted/50 rounded-2xl w-full"></div>)}
+            {[1,2,3].map(i => <div key={i} className="h-16 bg-surface-subtle rounded-2xl w-full"></div>)}
           </div>
         ) : tasks.length === 0 ? (
-          <div className="p-12 text-center rounded-3xl border border-dashed border-border/50 bg-card/10">
-            <div className="w-16 h-16 mx-auto bg-muted rounded-2xl flex items-center justify-center mb-4 text-muted-foreground">
+          <div className="p-12 text-center rounded-3xl border border-dashed border-border-default bg-surface-section">
+            <div className="w-16 h-16 mx-auto bg-surface-subtle rounded-2xl flex items-center justify-center mb-4 text-text-secondary">
               <span className="text-2xl">🌱</span>
             </div>
-            <h3 className="text-lg font-medium text-foreground">Sua lista está vazia</h3>
-            <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
+            <h3 className="text-lg font-medium text-text-primary">Sua lista está vazia</h3>
+            <p className="text-sm text-text-secondary mt-2 max-w-sm mx-auto">
               Comece adicionando tarefas no campo acima. Tire os pensamentos da cabeça e coloque no sistema.
             </p>
           </div>

@@ -31,16 +31,16 @@ export default function PerformancePage() {
           </p>
         </div>
         
-        <div className="flex p-1 bg-card border border-border/50 rounded-xl shadow-sm">
+        <div className="flex p-1 bg-surface-card border border-border-default rounded-xl shadow-sm">
           <button 
             onClick={() => setPeriod(7)}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${period === 7 ? 'bg-primary text-primary-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${period === 7 ? 'bg-action-primary text-text-on-brand shadow' : 'text-text-secondary hover:text-text-primary'}`}
           >
             7 Dias
           </button>
           <button 
             onClick={() => setPeriod(30)}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${period === 30 ? 'bg-primary text-primary-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${period === 30 ? 'bg-action-primary text-text-on-brand shadow' : 'text-text-secondary hover:text-text-primary'}`}
           >
             30 Dias
           </button>
@@ -48,57 +48,57 @@ export default function PerformancePage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-card/40 hover:bg-card/60 transition-colors">
+        <Card className="bg-surface-card border-border-default shadow-sm hover:border-border-subtle transition-colors">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-primary/10 text-primary">
+              <div className="p-3 rounded-xl bg-action-primary/10 text-action-primary">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Taxa de Conclusão</p>
-                <p className="text-2xl font-bold">{metrics.pctDone}%</p>
+                <p className="text-sm font-medium text-text-secondary">Taxa de Conclusão</p>
+                <p className="text-2xl font-bold text-text-primary">{metrics.pctDone}%</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-card/40 hover:bg-card/60 transition-colors">
+        <Card className="bg-surface-card border-border-default shadow-sm hover:border-border-subtle transition-colors">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-success/10 text-success">
+              <div className="p-3 rounded-xl bg-status-success/10 text-status-success">
                 <Activity className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Tarefas Entregues</p>
-                <p className="text-2xl font-bold">{metrics.completedInRange} / {metrics.totalInRange}</p>
+                <p className="text-sm font-medium text-text-secondary">Tarefas Entregues</p>
+                <p className="text-2xl font-bold text-text-primary">{metrics.completedInRange} / {metrics.totalInRange}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-card/40 hover:bg-card/60 transition-colors">
+        <Card className="bg-surface-card border-border-default shadow-sm hover:border-border-subtle transition-colors">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-warning/10 text-warning">
+              <div className="p-3 rounded-xl bg-status-warning/10 text-status-warning">
                 <TrendingUp className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Volume Criado</p>
-                <p className="text-2xl font-bold">{metrics.totalInRange}</p>
+                <p className="text-sm font-medium text-text-secondary">Volume Criado</p>
+                <p className="text-2xl font-bold text-text-primary">{metrics.totalInRange}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-danger/20 bg-danger/5">
+        <Card className="border-status-error/20 bg-status-error/5 shadow-sm hover:border-status-error/40 transition-colors">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-danger/20 text-danger">
+              <div className="p-3 rounded-xl bg-status-error/20 text-status-error">
                 <AlertTriangle className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-sm font-medium text-danger/80">Taxa de Atraso</p>
-                <p className="text-2xl font-bold text-danger">{metrics.pctOverdue}%</p>
+                <p className="text-sm font-medium text-status-error/80">Taxa de Atraso</p>
+                <p className="text-2xl font-bold text-status-error">{metrics.pctOverdue}%</p>
               </div>
             </div>
           </CardContent>
@@ -106,18 +106,18 @@ export default function PerformancePage() {
       </div>
 
       <div className="pt-6">
-        <div className="flex items-center gap-2 mb-6 text-danger">
+        <div className="flex items-center gap-2 mb-6 text-status-error">
           <AlertTriangle className="w-5 h-5" />
           <h2 className="text-xl font-semibold">Tarefas Atrasadas ({metrics.overdueList.length})</h2>
         </div>
         
         {metrics.overdueList.length === 0 ? (
-          <div className="p-12 text-center rounded-3xl border border-dashed border-success/30 bg-success/5">
-            <div className="w-16 h-16 mx-auto bg-success/20 rounded-2xl flex items-center justify-center mb-4 text-success">
+          <div className="p-12 text-center rounded-3xl border border-dashed border-status-success/30 bg-status-success/5">
+            <div className="w-16 h-16 mx-auto bg-status-success/20 rounded-2xl flex items-center justify-center mb-4 text-status-success">
               <span className="text-2xl">🎉</span>
             </div>
-            <h3 className="text-lg font-medium text-success">Nenhuma tarefa atrasada!</h3>
-            <p className="text-sm text-success/80 mt-2 max-w-sm mx-auto">
+            <h3 className="text-lg font-medium text-status-success">Nenhuma tarefa atrasada!</h3>
+            <p className="text-sm text-status-success/80 mt-2 max-w-sm mx-auto">
               Sua execução está perfeitamente em dia. Continue assim.
             </p>
           </div>

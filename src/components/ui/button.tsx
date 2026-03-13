@@ -6,7 +6,7 @@ import { motion } from "framer-motion"
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean
-  variant?: "default" | "outline" | "ghost" | "secondary" | "danger"
+  variant?: "default" | "secondary" | "strong" | "outline" | "ghost" | "danger"
   size?: "default" | "sm" | "lg" | "icon"
 }
 
@@ -17,14 +17,15 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     // Add framer motion whileTap effect for non-Child buttons to feel premium
     const MotionComp = asChild ? Comp : motion.button
 
-    const baseStyles = "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+    const baseStyles = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus disabled:pointer-events-none disabled:opacity-50"
     
     const variants = {
-      default: "bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm",
-      outline: "border border-border bg-transparent hover:bg-muted text-foreground",
-      ghost: "hover:bg-muted hover:text-foreground text-muted-foreground",
-      secondary: "bg-muted text-foreground hover:bg-muted/80",
-      danger: "bg-danger text-white hover:bg-danger/90 shadow-sm",
+      default: "bg-action-primary text-text-on-brand hover:bg-action-primary-hover active:bg-action-primary-active shadow-button-primary",
+      secondary: "bg-surface-card text-text-primary border border-border-default hover:bg-surface-subtle active:bg-surface-subtle shadow-sm",
+      strong: "bg-action-strong text-text-on-dark hover:bg-action-strong-hover shadow-lg text-base",
+      outline: "border border-border-default bg-transparent hover:bg-surface-subtle text-text-primary",
+      ghost: "hover:bg-surface-subtle hover:text-text-primary text-text-secondary",
+      danger: "bg-status-error text-text-on-brand hover:bg-status-error/90 shadow-sm",
     }
     
     const sizes = {

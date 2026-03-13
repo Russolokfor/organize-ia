@@ -12,13 +12,13 @@ export function GoalsProgress() {
   }
 
   return (
-    <Card className="bg-card/40 backdrop-blur-sm border-border/50">
+    <Card className="bg-surface-card backdrop-blur-sm border-border-default shadow-card">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-medium">Metas e Reservas</CardTitle>
+        <CardTitle className="text-lg font-medium text-text-primary">Metas e Reservas</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {goals.length === 0 ? (
-          <p className="text-muted-foreground text-sm py-2">Nenhuma meta configurada.</p>
+          <p className="text-text-secondary text-sm py-2">Nenhuma meta configurada.</p>
         ) : (
           goals.map((goal) => {
             const current = Number(goal.current_amount)
@@ -28,18 +28,18 @@ export function GoalsProgress() {
             return (
               <div key={goal.id} className="space-y-1">
                 <div className="flex justify-between text-sm">
-                  <span className="font-medium">{goal.title}</span>
-                  <span className="text-muted-foreground">
+                  <span className="font-medium text-text-primary">{goal.title}</span>
+                  <span className="text-text-secondary">
                     {pct.toFixed(0)}%
                   </span>
                 </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div className="h-2 bg-surface-subtle rounded-full overflow-hidden">
                   <div 
-                    className="h-full rounded-full bg-success transition-all"
+                    className="h-full rounded-full bg-status-success transition-all"
                     style={{ width: `${pct}%` }}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground text-right mt-1">
+                <p className="text-xs text-text-secondary text-right mt-1">
                   {formatCurrency(current)} / {formatCurrency(target)}
                 </p>
               </div>
