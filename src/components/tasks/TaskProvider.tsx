@@ -111,7 +111,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const dashboardMetrics = React.useMemo(() => {
     const todayDate = new Date()
     todayDate.setHours(0,0,0,0)
-    const active = tasks.filter(t => t.status !== 'done').length
+    const active = tasks.filter(t => t.status === 'doing').length
     const done = tasks.filter(t => t.status === 'done').length
     const overdue = tasks.filter(t => {
       if (!t.due_date || t.status === 'done') return false
