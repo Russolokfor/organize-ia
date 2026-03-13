@@ -385,27 +385,27 @@ export default function DashboardPage() {
              </CardTitle>
              <CardDescription className="text-xs text-text-secondary">Os últimos 7 dias da sua rotina.</CardDescription>
            </CardHeader>
-           <CardContent className="p-0 flex-1 flex flex-col justify-center">
+           <CardContent className="p-0 flex-1 flex flex-col justify-center overflow-hidden">
               <div className="divide-y divide-border-default/50">
-                 <div className="p-5 flex justify-between items-center group">
+                 <div className="p-4 sm:p-5 flex justify-between items-center group">
                     <p className="text-sm font-semibold text-text-secondary">Criadas</p>
                     <p className="text-xl font-bold text-text-primary">{perf7.totalInRange}</p>
                  </div>
-                 <div className="p-5 flex justify-between items-center group">
+                 <div className="p-4 sm:p-5 flex justify-between items-center group">
                     <p className="text-sm font-semibold text-text-secondary">Concluídas</p>
                     <p className="text-xl font-bold text-status-success">{perf7.completedInRange}</p>
                  </div>
-                 <div className="p-5 flex justify-between items-center group">
+                 <div className="p-4 sm:p-5 flex justify-between items-center group">
                     <p className="text-sm font-semibold text-text-secondary">Atrasos acumulados</p>
                     <p className={cn("text-xl font-bold", dashboardMetrics.overdue > 0 ? "text-status-error" : "text-text-primary")}>{dashboardMetrics.overdue}</p>
                  </div>
               </div>
            </CardContent>
-           <div className="p-4 bg-surface-subtle border-t border-border-default">
-               <Button asChild variant="outline" className="w-full text-xs font-semibold text-text-primary bg-surface-elevated hover:bg-surface-card rounded-lg h-9">
+           <CardFooter className="p-4 bg-surface-subtle border-t border-border-default mt-auto">
+               <Button asChild variant="outline" className="w-full text-xs font-semibold text-text-primary bg-surface-elevated hover:bg-surface-card rounded-lg h-9 border-border-default hover:border-text-primary">
                   <Link href="/performance">Histórico completo</Link>
                </Button>
-           </div>
+           </CardFooter>
         </Card>
 
       </div>
