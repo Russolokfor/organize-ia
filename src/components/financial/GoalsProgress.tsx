@@ -3,9 +3,10 @@
 import * as React from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { useFinancial } from '@/components/financial/FinancialProvider'
+import { Trash2 } from 'lucide-react'
 
 export function GoalsProgress() {
-  const { goals } = useFinancial()
+  const { goals, deleteGoal } = useFinancial()
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
@@ -26,12 +27,25 @@ export function GoalsProgress() {
             const pct = Math.min((current / target) * 100, 100)
 
             return (
-              <div key={goal.id} className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium text-text-primary">{goal.title}</span>
-                  <span className="text-text-secondary">
-                    {pct.toFixed(0)}%
-                  </span>
+              <div key={goal.id} className="space-y-1 group">
+                <div className="flex justify-between items-start text-sm">
+                  <span className="font-medium text-text-primary pr-2">{goal.title}</span>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => {
+                        if(confirm('Tem certeza que deseja excluir esta meta?')) {
+                          deleteGoal(goal.id)
+                        }
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-1 text-text-secondary hover:text-status-error hover:bg-status-error/10 rounded transition-all"
+                      title="Excluir Meta"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="text-text-secondary whitespace-nowrap">
+                      {pct.toFixed(0)}%
+                    </span>
+                  </div>
                 </div>
                 <div className="h-2 bg-surface-subtle rounded-full overflow-hidden">
                   <div 

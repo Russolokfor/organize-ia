@@ -8,16 +8,46 @@ import { useFinancial } from '@/components/financial/FinancialProvider'
 export function FinancialCharts() {
   const { entries } = useFinancial()
 
-  // Basic mock aggregation by category for the chart since the backend group-by isn't fully implemented locally here
-  // Ideally, this chart plots daily income/expense or cumulative balance over the month.
-
-  // Using a visual placeholder that aggregates the first 14 days of the month for visual effect
   const chartData = React.useMemo(() => {
-    return Array.from({ length: 14 }).map((_, i) => ({
+    // Determine the number of days in the current reference month.
+    // If we don't have a direct referenceMonth passed, we assume the current month
+    // since entries are already filtered by referenceMonth in the provider.
+    const today = new Date()
+    let year = today.getFullYear()
+    let month = today.getMonth()
+
+    if (entries.length > 0) {
+      const [y, m] = entries[0].reference_month.split('-')
+      year = parseInt(y)
+      month = parseInt(m) - 1
+    }
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate()
+
+    // Initialize an array with one object per day
+    const dailyData = Array.from({ length: daysInMonth }).map((_, i) => ({
       day: `Dia ${i + 1}`,
-      income: Math.floor(Math.random() * 500),
-      expense: Math.floor(Math.random() * 300)
+      income: 0,
+      expense: 0
     }))
+
+    // Aggregate entries into their respective days
+    entries.forEach(entry => {
+      // due_date is YYYY-MM-DD
+      const dateStr = entry.due_date
+      if (!dateStr) return
+
+      const dayPart = parseInt(dateStr.split('-')[2], 10)
+      if (dayPart >= 1 && dayPart <= daysInMonth) {
+        if (entry.type === 'income') {
+          dailyData[dayPart - 1].income += Number(entry.amount)
+        } else {
+          dailyData[dayPart - 1].expense += Number(entry.amount)
+        }
+      }
+    })
+
+    return dailyData
   }, [entries])
 
   return (

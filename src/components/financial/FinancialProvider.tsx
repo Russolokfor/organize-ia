@@ -117,10 +117,53 @@ export function FinancialProvider({ children }: { children: React.ReactNode }) {
 
   // Entry Actions
   const addEntry = async (entry: FinancialEntryInsert) => {
-    const newEntry = await financialEntryService.createEntry(entry)
-    if (newEntry.reference_month === referenceMonth) {
-      setEntries(prev => [newEntry, ...prev])
+    if (!entry.is_recurring) {
+      // Single entry
+      const newEntry = await financialEntryService.createEntry(entry)
+      if (newEntry.reference_month === referenceMonth) {
+        setEntries(prev => [newEntry, ...prev])
+      }
+      return
     }
+
+    // Recurring entries
+    import('date-fns').then(async ({ addMonths, addWeeks, addDays, format, parseISO }) => {
+      const baseDate = parseISO(entry.due_date!)
+      const inserts: Promise<any>[] = []
+      
+      let count = 1
+      if (entry.recurrence_type === 'monthly') count = 12
+      else if (entry.recurrence_type === 'weekly') count = 52
+      else if (entry.recurrence_type === 'biweekly') count = 24
+
+      for (let i = 0; i < count; i++) {
+        let nextDate = baseDate
+        if (i > 0) {
+          if (entry.recurrence_type === 'monthly') nextDate = addMonths(baseDate, i)
+          else if (entry.recurrence_type === 'weekly') nextDate = addWeeks(baseDate, i)
+          else if (entry.recurrence_type === 'biweekly') nextDate = addDays(baseDate, i * 14)
+        }
+
+        const nextDateStr = format(nextDate, 'yyyy-MM-dd')
+        const nextMonthRef = format(nextDate, 'yyyy-MM')
+        
+        inserts.push(financialEntryService.createEntry({
+          ...entry,
+          due_date: nextDateStr,
+          reference_month: nextMonthRef,
+          is_paid: i === 0 ? entry.is_paid : false, // only first might be paid
+          paid_at: i === 0 ? entry.paid_at : null
+        }))
+      }
+
+      const results = await Promise.all(inserts)
+      
+      // Update local state if any of the new entries belong to the currently viewed month
+      const currentMonthEntries = results.filter(r => r.reference_month === referenceMonth)
+      if (currentMonthEntries.length > 0) {
+        setEntries(prev => [...currentMonthEntries, ...prev])
+      }
+    })
   }
 
   const updateEntry = async (id: string, updates: FinancialEntryUpdate) => {

@@ -53,11 +53,14 @@ export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose
   const [category, setCategory] = React.useState('Alimentação')
   const [dueDate, setDueDate] = React.useState('')
   const [isPaid, setIsPaid] = React.useState(true)
+  const [recurrence, setRecurrence] = React.useState('none')
 
   React.useEffect(() => {
     if (!isOpen) {
       setTitle('')
       setAmount('')
+      setDueDate('')
+      setRecurrence('none')
     }
   }, [isOpen])
 
@@ -65,85 +68,130 @@ export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose
     e.preventDefault()
     if (!title || !amount) return
     
-    await addEntry({
-      title,
-      amount: parseFloat(amount),
-      type,
-      category,
-      is_paid: type === 'income' ? true : isPaid,
-      paid_at: (type === 'income' || isPaid) ? new Date().toISOString() : null,
-      due_date: dueDate || null,
-      notes: null,
-      is_recurring: false,
-      recurrence_type: null,
-      is_fixed: false,
-      reference_month: referenceMonth
-    })
-    onClose()
+    const finalDate = dueDate || new Date().toISOString().split('T')[0]
+    const isRecurring = recurrence !== 'none'
+    
+    try {
+      await addEntry({
+        title,
+        amount: parseFloat(amount),
+        type,
+        category,
+        is_paid: type === 'income' ? true : isPaid,
+        paid_at: (type === 'income' || isPaid) ? new Date().toISOString() : null,
+        due_date: finalDate,
+        notes: null,
+        is_recurring: isRecurring,
+        recurrence_type: isRecurring ? recurrence : null,
+        is_fixed: isRecurring,
+        reference_month: referenceMonth
+      })
+      onClose()
+    } catch(err) {
+      console.error(err)
+      alert("Erro ao adicionar transação")
+    }
   }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Nova Transação">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex gap-2 p-1 bg-surface-elevated rounded-xl">
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="flex gap-2 p-1.5 bg-surface-elevated rounded-xl border border-border-default/50">
           <button 
             type="button"
             onClick={() => setType('expense')}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${type === 'expense' ? 'bg-surface-card shadow-sm text-status-error' : 'text-text-secondary hover:text-text-primary'}`}
+            className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${type === 'expense' ? 'bg-status-error/10 text-status-error shadow-sm border border-status-error/20' : 'text-text-secondary hover:text-text-primary'}`}
           >
-            Despesa
+            🔽 Despesa
           </button>
           <button 
             type="button"
             onClick={() => setType('income')}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${type === 'income' ? 'bg-surface-card shadow-sm text-status-success' : 'text-text-secondary hover:text-text-primary'}`}
+            className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${type === 'income' ? 'bg-status-success/10 text-status-success shadow-sm border border-status-success/20' : 'text-text-secondary hover:text-text-primary'}`}
           >
-            Receita
+            🔼 Receita
           </button>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-text-primary">Título</label>
-          <Input required value={title} onChange={e => setTitle(e.target.value)} placeholder="Ex: Mercado, Salário..." />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-text-primary">Valor (R$)</label>
-          <Input required type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-text-primary">Categoria</label>
-          <select 
-            value={category} 
-            onChange={e => setCategory(e.target.value)}
-            className="flex h-10 w-full rounded-md border border-border/50 bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <option>Alimentação</option>
-            <option>Moradia</option>
-            <option className="bg-surface-elevated text-text-primary">Transporte</option>
-            <option className="bg-surface-elevated text-text-primary">Saúde</option>
-            <option className="bg-surface-elevated text-text-primary">Lazer</option>
-            <option className="bg-surface-elevated text-text-primary">Salário</option>
-            <option className="bg-surface-elevated text-text-primary">Outros</option>
-          </select>
-        </div>
-
-        {type === 'expense' && (
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-text-primary">Vencimento (Opcional)</label>
-            <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+        <div className="space-y-4 pt-2">
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Título</label>
+            <Input required value={title} onChange={e => setTitle(e.target.value)} placeholder="Ex: Mercado, Salário..." className="h-12 bg-surface-card border-border-default focus-visible:ring-action-primary" />
           </div>
-        )}
 
-        {type === 'expense' && (
-           <label className="flex items-center gap-2 text-sm font-medium cursor-pointer text-text-primary">
-             <input type="checkbox" checked={isPaid} onChange={e => setIsPaid(e.target.checked)} className="rounded border-border-default text-action-primary focus:ring-action-primary h-4 w-4" />
-             Já está pago
-           </label>
-        )}
+          <div className="flex gap-4">
+            <div className="space-y-1.5 flex-1">
+              <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Valor (R$)</label>
+              <Input required type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" className="h-12 bg-surface-card border-border-default focus-visible:ring-action-primary text-lg font-medium" />
+            </div>
+            
+            <div className="space-y-1.5 flex-[1.5]">
+              <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Categoria</label>
+              <select 
+                value={category} 
+                onChange={e => setCategory(e.target.value)}
+                className="flex h-12 w-full rounded-md border border-border-default bg-surface-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action-primary text-text-primary"
+              >
+                <option className="bg-surface-elevated text-text-primary">Alimentação</option>
+                <option className="bg-surface-elevated text-text-primary">Moradia</option>
+                <option className="bg-surface-elevated text-text-primary">Transporte</option>
+                <option className="bg-surface-elevated text-text-primary">Saúde</option>
+                <option className="bg-surface-elevated text-text-primary">Lazer</option>
+                <option className="bg-surface-elevated text-text-primary">Salário</option>
+                <option className="bg-surface-elevated text-text-primary">Outros</option>
+              </select>
+            </div>
+          </div>
 
-        <Button type="submit" className="w-full mt-2 bg-action-primary hover:bg-action-primary-hover text-text-on-brand">Salvar {type === 'income' ? 'Receita' : 'Despesa'}</Button>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="space-y-1.5 flex-1">
+              <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Data (Opcional)</label>
+              <Input 
+                type="date" 
+                value={dueDate} 
+                onChange={e => setDueDate(e.target.value)} 
+                className="h-12 bg-surface-card border-border-default focus-visible:ring-action-primary color-scheme-dark"
+                title="Se não selecionar, usará a data de hoje"
+              />
+            </div>
+            <div className="space-y-1.5 flex-[1.2]">
+              <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Repetição</label>
+              <select 
+                value={recurrence} 
+                onChange={e => setRecurrence(e.target.value)}
+                className="flex h-12 w-full rounded-md border border-border-default bg-surface-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action-primary text-text-primary"
+              >
+                <option value="none" className="bg-surface-elevated text-text-primary">Única vez</option>
+                <option value="weekly" className="bg-surface-elevated text-text-primary">Toda Semana</option>
+                <option value="biweekly" className="bg-surface-elevated text-text-primary">A cada 15 dias</option>
+                <option value="monthly" className="bg-surface-elevated text-text-primary">Todo Mês (12x)</option>
+              </select>
+            </div>
+          </div>
+
+          {type === 'expense' && (
+            <div className="pt-2">
+              <label className="flex items-center gap-3 text-sm font-medium cursor-pointer text-text-primary bg-surface-elevated p-3 rounded-xl border border-border-default/50 hover:border-border-default transition-colors">
+                <div className="relative flex items-center justify-center w-5 h-5">
+                  <input 
+                    type="checkbox" 
+                    checked={isPaid} 
+                    onChange={e => setIsPaid(e.target.checked)} 
+                    className="appearance-none peer w-5 h-5 border-2 border-border-focus rounded cursor-pointer checked:bg-status-success checked:border-status-success transition-all" 
+                  />
+                  <svg className="absolute w-3 h-3 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 5L5 9L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                Esta despesa já está paga
+              </label>
+            </div>
+          )}
+        </div>
+
+        <Button type="submit" className="w-full h-12 text-base font-semibold mt-4 bg-action-primary hover:bg-action-primary-hover text-text-on-brand shadow-lg hover:shadow-action-primary/25 transition-all">
+          {type === 'income' ? 'Registrar Receita' : 'Registrar Despesa'}
+        </Button>
       </form>
     </Modal>
   )
