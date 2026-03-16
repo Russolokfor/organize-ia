@@ -128,4 +128,49 @@ export class TaskService {
     }
     return this.update(id, patch)
   }
+
+  async removeMany(ids: string[]): Promise<void> {
+    const userId = await this.getUserId()
+    const { error } = await this.supabase
+      .from('tasks')
+      .delete()
+      .eq('user_id', userId)
+      .in('id', ids)
+
+    if (error) throw error
+  }
+
+  async duplicateMany(ids: string[]): Promise<Task[]> {
+    const userId = await this.getUserId()
+    
+    // 1. Fetch the tasks to copy
+    const { data: originalTasks, error: fetchErr } = await this.supabase
+      .from('tasks')
+      .select('*')
+      .eq('user_id', userId)
+      .in('id', ids)
+
+    if (fetchErr) throw fetchErr
+    if (!originalTasks || originalTasks.length === 0) return []
+
+    // 2. Map and clean them for insertion
+    const copies = originalTasks.map(t => {
+      const { id, created_at, updated_at, completed_at, ...rest } = t
+      return {
+        ...rest,
+        status: 'planned', // Re-planning them
+        pinned_today: false, // Don't carry over pinning automatically
+        routine_order: null, // Reset routine order
+      }
+    })
+
+    // 3. Bulk insert
+    const { data, error: insertErr } = await this.supabase
+      .from('tasks')
+      .insert(copies)
+      .select()
+
+    if (insertErr) throw insertErr
+    return data as Task[]
+  }
 }

@@ -11,14 +11,23 @@ import { Pencil } from 'lucide-react'
 interface TaskItemProps {
   task: Task
   showDragHandle?: boolean
+  isSelectMode?: boolean
+  isSelected?: boolean
+  onToggleSelect?: (id: string) => void
 }
 
-export function TaskItem({ task, showDragHandle }: TaskItemProps) {
+export function TaskItem({ task, showDragHandle, isSelectMode, isSelected, onToggleSelect }: TaskItemProps) {
   const { toggleTaskDone, pinTaskToday, deleteTask } = useTasks()
   const [showOptions, setShowOptions] = React.useState(false)
   const [isEditModalOpen, setEditModalOpen] = React.useState(false)
 
   const isDone = task.status === 'done'
+
+  const handleItemClick = () => {
+    if (isSelectMode && onToggleSelect) {
+      onToggleSelect(task.id)
+    }
+  }
 
   return (
     <motion.div
@@ -26,23 +35,31 @@ export function TaskItem({ task, showDragHandle }: TaskItemProps) {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, height: 0 }}
-      className={`group flex items-center gap-3 p-4 bg-card/40 border border-border/50 rounded-2xl hover:bg-muted/20 transition-all ${isDone ? 'opacity-50' : ''}`}
+      onClick={handleItemClick}
+      className={`group flex items-center gap-3 p-4 bg-card/40 border ${isSelected ? 'border-primary bg-primary/5' : 'border-border/50'} rounded-2xl hover:bg-muted/20 transition-all ${isDone && !isSelectMode ? 'opacity-50' : ''} ${isSelectMode ? 'cursor-pointer' : ''}`}
     >
-      {showDragHandle && (
+      {showDragHandle && !isSelectMode && (
         <button className="cursor-grab text-muted-foreground hover:text-foreground">
           <GripVertical className="w-5 h-5" />
         </button>
       )}
 
-      {/* Check Button */}
-      <button 
-        onClick={() => toggleTaskDone(task)}
-        className={`w-6 h-6 rounded-full flex items-center justify-center border-2 transition-colors flex-shrink-0 ${
-          isDone ? 'bg-success border-success text-white' : 'border-muted-foreground hover:border-primary'
-        }`}
-      >
-        {isDone && <Check className="w-4 h-4" />}
-      </button>
+      {/* Select Mode Checkbox */}
+      {isSelectMode ? (
+        <div className={`w-6 h-6 rounded-md flex flex-shrink-0 items-center justify-center border-2 transition-colors ${isSelected ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground'}`}>
+          {isSelected && <Check className="w-4 h-4" />}
+        </div>
+      ) : (
+        /* Check Button */
+        <button 
+          onClick={(e) => { e.stopPropagation(); toggleTaskDone(task); }}
+          className={`w-6 h-6 rounded-full flex items-center justify-center border-2 transition-colors flex-shrink-0 ${
+            isDone ? 'bg-success border-success text-white' : 'border-muted-foreground hover:border-primary'
+          }`}
+        >
+          {isDone && <Check className="w-4 h-4" />}
+        </button>
+      )}
 
       {/* Content */}
       <div className="flex-1 min-w-0">
@@ -79,47 +96,52 @@ export function TaskItem({ task, showDragHandle }: TaskItemProps) {
       </div>
 
       {/* Options Menu Toggle */}
-      <div className="relative">
-        <button 
-          onClick={() => setShowOptions(!showOptions)}
-          className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-        >
-          <MoreVertical className="w-4 h-4" />
-        </button>
-        
-        {/* Simple Popover via state */}
-        {showOptions && (
-          <div className="absolute right-0 top-10 w-40 bg-card border border-border rounded-xl shadow-2xl z-10 py-1 flex flex-col overflow-hidden">
-            <button
-              onClick={() => {
-                pinTaskToday(task.id, !task.pinned_today)
-                setShowOptions(false)
-              }}
-              className="px-4 py-2 text-sm text-left hover:bg-muted/50 flex items-center gap-2"
-            >
-              <Pin className="w-4 h-4" /> {task.pinned_today ? 'Remover Foco' : 'Focar Hoje'}
-            </button>
-            <button
-              onClick={() => {
-                setShowOptions(false)
-                setEditModalOpen(true)
-              }}
-              className="px-4 py-2 text-sm text-left hover:bg-muted/50 flex items-center gap-2"
-            >
-              <Pencil className="w-4 h-4" /> Editar
-            </button>
-            <button
-              onClick={() => {
-                deleteTask(task.id)
-                setShowOptions(false)
-              }}
-              className="px-4 py-2 text-sm text-left hover:bg-danger/20 text-danger flex items-center gap-2 transition-colors"
-            >
-              <Trash2 className="w-4 h-4" /> Excluir
-            </button>
-          </div>
-        )}
-      </div>
+      {!isSelectMode && (
+        <div className="relative">
+          <button 
+            onClick={(e) => { e.stopPropagation(); setShowOptions(!showOptions); }}
+            className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <MoreVertical className="w-4 h-4" />
+          </button>
+          
+          {/* Simple Popover via state */}
+          {showOptions && (
+            <div className="absolute right-0 top-10 w-40 bg-card border border-border rounded-xl shadow-2xl z-10 py-1 flex flex-col overflow-hidden">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  pinTaskToday(task.id, !task.pinned_today)
+                  setShowOptions(false)
+                }}
+                className="px-4 py-2 text-sm text-left hover:bg-muted/50 flex items-center gap-2"
+              >
+                <Pin className="w-4 h-4" /> {task.pinned_today ? 'Remover Foco' : 'Focar Hoje'}
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowOptions(false)
+                  setEditModalOpen(true)
+                }}
+                className="px-4 py-2 text-sm text-left hover:bg-muted/50 flex items-center gap-2"
+              >
+                <Pencil className="w-4 h-4" /> Editar
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  deleteTask(task.id)
+                  setShowOptions(false)
+                }}
+                className="px-4 py-2 text-sm text-left hover:bg-danger/20 text-danger flex items-center gap-2 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" /> Excluir
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {showOptions && (
         <div className="fixed inset-0 z-0" onClick={() => setShowOptions(false)} />

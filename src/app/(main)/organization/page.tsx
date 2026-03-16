@@ -7,11 +7,11 @@ import { Card, CardContent } from '@/components/ui/card'
 import { TaskItem } from '@/components/tasks/TaskItem'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Calendar, Clock, Plus, Target } from 'lucide-react'
+import { Calendar, Clock, Plus, Target, CheckSquare, Trash2, Copy } from 'lucide-react'
 import { TaskFilterScope, TaskFilterStatus } from '@/types'
 
 export default function OrganizationPage() {
-  const { tasks, addTask, refresh, loading } = useTasks()
+  const { tasks, addTask, refresh, loading, deleteTasks, duplicateTasks } = useTasks()
   const [title, setTitle] = React.useState('')
   const [dueDate, setDueDate] = React.useState('')
   const [duration, setDuration] = React.useState('30')
@@ -19,6 +19,10 @@ export default function OrganizationPage() {
   
   const [statusFilter, setStatusFilter] = React.useState<TaskFilterStatus>('all')
   const [scopeFilter, setScopeFilter] = React.useState<TaskFilterScope>('all')
+
+  const [isSelectMode, setIsSelectMode] = React.useState(false)
+  const [selectedTaskIds, setSelectedTaskIds] = React.useState<Set<string>>(new Set())
+  const [isProcessingBulk, setIsProcessingBulk] = React.useState(false)
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,6 +42,45 @@ export default function OrganizationPage() {
   React.useEffect(() => {
     refresh({ status: statusFilter, scope: scopeFilter })
   }, [statusFilter, scopeFilter, refresh])
+
+  const toggleSelection = (id: string) => {
+    const next = new Set(selectedTaskIds)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setSelectedTaskIds(next)
+  }
+
+  const executeBulkDelete = async () => {
+    if (selectedTaskIds.size === 0) return
+    if (!window.confirm(`Excluir permanentemente ${selectedTaskIds.size} tarefas?`)) return
+    
+    setIsProcessingBulk(true)
+    try {
+      await deleteTasks(Array.from(selectedTaskIds))
+      setIsSelectMode(false)
+      setSelectedTaskIds(new Set())
+    } catch (err) {
+      console.error(err)
+      alert("Erro ao excluir tarefas.")
+    } finally {
+      setIsProcessingBulk(false)
+    }
+  }
+
+  const executeBulkDuplicate = async () => {
+    if (selectedTaskIds.size === 0) return
+    setIsProcessingBulk(true)
+    try {
+      await duplicateTasks(Array.from(selectedTaskIds))
+      setIsSelectMode(false)
+      setSelectedTaskIds(new Set())
+    } catch (err) {
+      console.error(err)
+      alert("Erro ao copiar tarefas.")
+    } finally {
+      setIsProcessingBulk(false)
+    }
+  }
 
   return (
     <motion.div
@@ -136,6 +179,19 @@ export default function OrganizationPage() {
             <option value="overdue">Atrasadas</option>
             <option value="no_due_date">Sem prazo</option>
           </select>
+
+          <Button 
+            variant={isSelectMode ? "default" : "outline"}
+            size="sm"
+            onClick={() => {
+              setIsSelectMode(!isSelectMode)
+              setSelectedTaskIds(new Set())
+            }}
+            className={`gap-2 ml-2 ${isSelectMode ? 'bg-primary text-primary-foreground' : 'bg-surface-card text-text-secondary border-border-default'}`}
+          >
+            <CheckSquare className="w-4 h-4" /> 
+            {isSelectMode ? 'Cancelar' : 'Selecionar'}
+          </Button>
         </div>
       </div>
 
@@ -156,10 +212,40 @@ export default function OrganizationPage() {
           </div>
         ) : (
           tasks.map(task => (
-            <TaskItem key={task.id} task={task} />
+            <TaskItem 
+              key={task.id} 
+              task={task} 
+              isSelectMode={isSelectMode}
+              isSelected={selectedTaskIds.has(task.id)}
+              onToggleSelect={toggleSelection}
+            />
           ))
         )}
       </motion.div>
+
+      {/* Bulk Action Bar */}
+      {isSelectMode && (
+        <motion.div 
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 100, opacity: 0 }}
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4"
+        >
+          <div className="bg-surface-elevated/90 backdrop-blur-xl border border-border-default p-4 rounded-2xl shadow-2xl flex items-center justify-between gap-4">
+            <span className="text-sm font-medium text-text-primary">
+              {selectedTaskIds.size} selecionada(s)
+            </span>
+            <div className="flex gap-2">
+              <Button size="sm" variant="ghost" className="text-status-error hover:bg-status-error/10" disabled={selectedTaskIds.size === 0 || isProcessingBulk} onClick={executeBulkDelete}>
+                <Trash2 className="w-4 h-4 mr-2" /> Excluir
+              </Button>
+              <Button size="sm" className="bg-action-primary hover:bg-action-primary-hover text-text-on-brand" disabled={selectedTaskIds.size === 0 || isProcessingBulk} onClick={executeBulkDuplicate}>
+                <Copy className="w-4 h-4 mr-2" /> Repetir
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
     </motion.div>
   )
 }

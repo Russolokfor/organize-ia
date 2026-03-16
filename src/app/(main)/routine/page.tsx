@@ -7,16 +7,19 @@ import { TaskItem } from '@/components/tasks/TaskItem'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { CheckCircle2, Clock, ListTodo, Plus, Sparkles, Target, ArrowUpDown } from 'lucide-react'
+import { CheckCircle2, Clock, ListTodo, Plus, Sparkles, Target, ArrowUpDown, CheckSquare, Trash2, Copy } from 'lucide-react'
 import { isToday, parseISO } from 'date-fns'
 import { Task } from '@/types'
 
 export default function RoutinePage() {
-  const { tasks, routineMetrics, addTask, updateTask, refresh, loading } = useTasks()
+  const { tasks, routineMetrics, addTask, updateTask, refresh, loading, deleteTasks, duplicateTasks } = useTasks()
   const [quickAdd, setQuickAdd] = React.useState('')
   const [isAILoading, setIsAILoading] = React.useState(false)
   const [sortMode, setSortMode] = React.useState<'manual' | 'alpha'>('manual')
-  
+  const [isSelectMode, setIsSelectMode] = React.useState(false)
+  const [selectedTaskIds, setSelectedTaskIds] = React.useState<Set<string>>(new Set())
+  const [isProcessingBulk, setIsProcessingBulk] = React.useState(false)
+
   // Filter today's tasks
   const todayTasks = React.useMemo(() => {
     return tasks.filter(t => t.pinned_today || (t.due_date && isToday(parseISO(t.due_date))))
@@ -95,6 +98,45 @@ export default function RoutinePage() {
       alert("Erro ao usar IA. Verifique se a API Key está configurada.")
     } finally {
       setIsAILoading(false)
+    }
+  }
+
+  const toggleSelection = (id: string) => {
+    const next = new Set(selectedTaskIds)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setSelectedTaskIds(next)
+  }
+
+  const executeBulkDelete = async () => {
+    if (selectedTaskIds.size === 0) return
+    if (!window.confirm(`Excluir permanentemente ${selectedTaskIds.size} tarefas da sua rotina?`)) return
+    
+    setIsProcessingBulk(true)
+    try {
+      await deleteTasks(Array.from(selectedTaskIds))
+      setIsSelectMode(false)
+      setSelectedTaskIds(new Set())
+    } catch (err) {
+      console.error(err)
+      alert("Erro ao excluir tarefas.")
+    } finally {
+      setIsProcessingBulk(false)
+    }
+  }
+
+  const executeBulkDuplicate = async () => {
+    if (selectedTaskIds.size === 0) return
+    setIsProcessingBulk(true)
+    try {
+      await duplicateTasks(Array.from(selectedTaskIds))
+      setIsSelectMode(false)
+      setSelectedTaskIds(new Set())
+    } catch (err) {
+      console.error(err)
+      alert("Erro ao copiar tarefas.")
+    } finally {
+      setIsProcessingBulk(false)
     }
   }
 
@@ -177,13 +219,28 @@ export default function RoutinePage() {
 
         <div className="flex items-center justify-between px-2 pt-4">
           <h2 className="font-medium text-text-secondary text-sm">Lista de Execução</h2>
-          <button 
-            onClick={() => setSortMode(s => s === 'manual' ? 'alpha' : 'manual')}
-            className="flex items-center gap-2 text-xs font-medium text-text-secondary hover:text-text-primary transition-colors"
-          >
-            <ArrowUpDown className="w-3 h-3" />
-            {sortMode === 'manual' ? 'Ordem Manual' : 'Alfabética'}
-          </button>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setSortMode(s => s === 'manual' ? 'alpha' : 'manual')}
+              className="flex items-center gap-2 text-xs font-medium text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50"
+              disabled={isSelectMode}
+            >
+              <ArrowUpDown className="w-3 h-3" />
+              {sortMode === 'manual' ? 'Ordem Manual' : 'Alfabética'}
+            </button>
+            <Button 
+              variant={isSelectMode ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                setIsSelectMode(!isSelectMode)
+                setSelectedTaskIds(new Set())
+              }}
+              className={`gap-2 h-8 text-xs ${isSelectMode ? 'bg-primary text-primary-foreground' : 'bg-transparent text-text-secondary border-transparent hover:bg-surface-elevated'}`}
+            >
+              <CheckSquare className="w-3 h-3" /> 
+              {isSelectMode ? 'Cancelar' : 'Selecionar'}
+            </Button>
+          </div>
         </div>
 
         {orderedTasks.length === 0 ? (
@@ -201,14 +258,44 @@ export default function RoutinePage() {
               <Reorder.Item 
                 key={task.id} 
                 value={task}
-                dragListener={sortMode === 'manual'}
+                dragListener={sortMode === 'manual' && !isSelectMode}
               >
-                <TaskItem task={task} showDragHandle={sortMode === 'manual'} />
+                <TaskItem 
+                  task={task} 
+                  showDragHandle={sortMode === 'manual' && !isSelectMode} 
+                  isSelectMode={isSelectMode}
+                  isSelected={selectedTaskIds.has(task.id)}
+                  onToggleSelect={toggleSelection}
+                />
               </Reorder.Item>
             ))}
           </Reorder.Group>
         )}
       </div>
+
+      {/* Bulk Action Bar */}
+      {isSelectMode && (
+        <motion.div 
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 100, opacity: 0 }}
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4"
+        >
+          <div className="bg-surface-elevated/90 backdrop-blur-xl border border-border-default p-4 rounded-2xl shadow-2xl flex items-center justify-between gap-4">
+            <span className="text-sm font-medium text-text-primary">
+              {selectedTaskIds.size} selecionada(s)
+            </span>
+            <div className="flex gap-2">
+              <Button size="sm" variant="ghost" className="text-status-error hover:bg-status-error/10" disabled={selectedTaskIds.size === 0 || isProcessingBulk} onClick={executeBulkDelete}>
+                <Trash2 className="w-4 h-4 mr-2" /> Excluir
+              </Button>
+              <Button size="sm" className="bg-action-primary hover:bg-action-primary-hover text-text-on-brand" disabled={selectedTaskIds.size === 0 || isProcessingBulk} onClick={executeBulkDuplicate}>
+                <Copy className="w-4 h-4 mr-2" /> Repetir
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
     </motion.div>
   )
 }

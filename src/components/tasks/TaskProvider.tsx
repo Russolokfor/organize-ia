@@ -19,6 +19,8 @@ interface TaskContextType {
   dashboardMetrics: DashboardMetrics
   routineMetrics: RoutineMetrics
   getPerformanceMetrics: (days: 7 | 30) => PerformanceMetrics
+  deleteTasks: (ids: string[]) => Promise<void>
+  duplicateTasks: (ids: string[]) => Promise<void>
 }
 
 const TaskContext = React.createContext<TaskContextType | undefined>(undefined)
@@ -107,6 +109,28 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const deleteTasks = async (ids: string[]) => {
+    try {
+      // Optimistic
+      setTasks(prev => prev.filter(t => !ids.includes(t.id)))
+      await taskService.removeMany(ids)
+    } catch (err: any) {
+      setError(err.message)
+      refresh()
+      throw err
+    }
+  }
+
+  const duplicateTasks = async (ids: string[]) => {
+    try {
+      const newTasks = await taskService.duplicateMany(ids)
+      setTasks(prev => [...newTasks, ...prev])
+    } catch (err: any) {
+      setError(err.message)
+      throw err
+    }
+  }
+
   // Metrics Calculations (Frontend as requested)
   const dashboardMetrics = React.useMemo(() => {
     const todayDate = new Date()
@@ -162,7 +186,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
   const contextValue = React.useMemo(() => ({
     tasks, loading, error, refresh, addTask, updateTask, deleteTask, toggleTaskDone, pinTaskToday,
-    dashboardMetrics, routineMetrics, getPerformanceMetrics
+    dashboardMetrics, routineMetrics, getPerformanceMetrics, deleteTasks, duplicateTasks
   }), [tasks, loading, error, refresh, dashboardMetrics, routineMetrics, getPerformanceMetrics])
 
   return (
