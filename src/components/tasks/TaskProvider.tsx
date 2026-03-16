@@ -139,7 +139,16 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     const done = tasks.filter(t => t.status === 'done').length
     const overdue = tasks.filter(t => {
       if (!t.due_date || t.status === 'done') return false
-      return parseISO(t.due_date) < todayDate
+      const d = parseISO(t.due_date)
+      if (d < todayDate) return true // day already passed
+      // If due today and has a time set, check if the time is already past
+      if (d.getTime() === todayDate.getTime() && t.due_time) {
+        const [h, m] = t.due_time.split(':').map(Number)
+        const dueDateTime = new Date(todayDate)
+        dueDateTime.setHours(h, m, 0, 0)
+        return new Date() > dueDateTime
+      }
+      return false
     }).length
     
     const todayCount = tasks.filter(t => t.status !== 'done' && (t.pinned_today || (t.due_date && isToday(parseISO(t.due_date))))).length
@@ -175,7 +184,17 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
     const overdueList = tasks.filter(t => {
       if (!t.due_date || t.status === 'done') return false
-      return parseISO(t.due_date) < todayDate
+      const d = parseISO(t.due_date)
+      const todayMidnight = new Date()
+      todayMidnight.setHours(0,0,0,0)
+      if (d < todayMidnight) return true
+      if (d.getTime() === todayMidnight.getTime() && t.due_time) {
+        const [h, m] = t.due_time.split(':').map(Number)
+        const dueDateTime = new Date(todayMidnight)
+        dueDateTime.setHours(h, m, 0, 0)
+        return new Date() > dueDateTime
+      }
+      return false
     })
     
     const pctDone = totalInRange === 0 ? 0 : Math.round((completedInRange / totalInRange) * 100)

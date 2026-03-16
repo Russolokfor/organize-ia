@@ -9,6 +9,7 @@ export interface Task {
   priority: 1 | 2 | 3 | null
   duration_min: number | null
   due_date: string | null // YYYY-MM-DD format
+  due_time: string | null // HH:MM format (24h)
   completed_at: string | null // ISO Timestamp
   pinned_today: boolean
   routine_order: number | null

@@ -2,7 +2,7 @@ import * as React from 'react'
 import { motion } from 'framer-motion'
 import { Task } from '@/types'
 import { useTasks } from './TaskProvider'
-import { Check, Clock, GripVertical, MoreVertical, Pin, Trash2, Calendar } from 'lucide-react'
+import { Check, Clock, GripVertical, MoreVertical, Pin, Trash2, Calendar, AlarmClock } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { format, parseISO } from 'date-fns'
 import { EditTaskModal } from './EditTaskModal'
@@ -73,6 +73,12 @@ export function TaskItem({ task, showDragHandle, isSelectMode, isSelected, onTog
             <Badge variant="outline" className="text-xs bg-background/50 border-border shadow-sm flex items-center gap-1">
               <Calendar className="w-3 h-3" /> {format(parseISO(task.due_date), 'dd/MM')}
             </Badge>
+          )}
+
+          {task.due_time && (
+            <span className="text-xs text-text-secondary flex items-center gap-1">
+              <AlarmClock className="w-3 h-3" /> {task.due_time}
+            </span>
           )}
 
           {task.duration_min && (

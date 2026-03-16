@@ -5,15 +5,17 @@ import { motion } from 'framer-motion'
 import { useTasks } from '@/components/tasks/TaskProvider'
 import { Card, CardContent } from '@/components/ui/card'
 import { TaskItem } from '@/components/tasks/TaskItem'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Calendar, Clock, Plus, Target, CheckSquare, Trash2, Copy } from 'lucide-react'
+import { Calendar, Clock, Plus, Target, CheckSquare, Trash2, Copy, AlarmClock } from 'lucide-react'
 import { TaskFilterScope, TaskFilterStatus } from '@/types'
+import { format, addDays } from 'date-fns'
 
 export default function OrganizationPage() {
   const { tasks, addTask, refresh, loading, deleteTasks, duplicateTasks } = useTasks()
   const [title, setTitle] = React.useState('')
   const [dueDate, setDueDate] = React.useState('')
+  const [dueTime, setDueTime] = React.useState('')
+  const [dateMode, setDateMode] = React.useState<'none' | 'hoje' | 'amanha' | 'custom'>('none')
   const [duration, setDuration] = React.useState('30')
   const [priority, setPriority] = React.useState<'1'|'2'|'3'>('3')
   
@@ -24,17 +26,30 @@ export default function OrganizationPage() {
   const [selectedTaskIds, setSelectedTaskIds] = React.useState<Set<string>>(new Set())
   const [isProcessingBulk, setIsProcessingBulk] = React.useState(false)
 
+  const todayStr = format(new Date(), 'yyyy-MM-dd')
+  const tomorrowStr = format(addDays(new Date(), 1), 'yyyy-MM-dd')
+
+  const selectDateMode = (mode: 'hoje' | 'amanha' | 'custom') => {
+    setDateMode(mode)
+    if (mode === 'hoje') setDueDate(todayStr)
+    else if (mode === 'amanha') setDueDate(tomorrowStr)
+    else setDueDate('')
+  }
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim()) return
     await addTask({
       title,
       due_date: dueDate || null,
+      due_time: dueTime || null,
       duration_min: parseInt(duration) || 30,
       priority: parseInt(priority) as 1 | 2 | 3
     })
     setTitle('')
     setDueDate('')
+    setDueTime('')
+    setDateMode('none')
     setDuration('30')
     setPriority('3')
   }
@@ -53,7 +68,6 @@ export default function OrganizationPage() {
   const executeBulkDelete = async () => {
     if (selectedTaskIds.size === 0) return
     if (!window.confirm(`Excluir permanentemente ${selectedTaskIds.size} tarefas?`)) return
-    
     setIsProcessingBulk(true)
     try {
       await deleteTasks(Array.from(selectedTaskIds))
@@ -99,6 +113,7 @@ export default function OrganizationPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-action-primary/10 to-transparent pointer-events-none rounded-2xl" />
         <CardContent className="p-4 md:p-6 relative z-10">
           <form onSubmit={handleCreate} className="space-y-4">
+            {/* Title input */}
             <div className="flex bg-surface-card backdrop-blur rounded-xl border border-border-default p-1 shadow-inner focus-within:ring-2 focus-within:ring-action-primary/50 transition-all">
               <input
                 type="text"
@@ -113,14 +128,78 @@ export default function OrganizationPage() {
               </Button>
             </div>
             
-            <div className="flex flex-wrap items-center gap-3 md:gap-4 px-1 mt-4">
-              <div className="flex items-center gap-2 bg-surface-card backdrop-blur px-3 py-1.5 border border-border-default rounded-lg shadow-sm">
-                <Calendar className="w-4 h-4 text-text-secondary" />
+            {/* Quick Date Shortcuts */}
+            <div className="flex flex-wrap items-center gap-2 px-1">
+              <span className="text-xs font-semibold text-text-secondary uppercase tracking-wider mr-1 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5" /> Data:
+              </span>
+              {(['hoje', 'amanha'] as const).map(mode => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => selectDateMode(mode)}
+                  className={`px-3 py-1 text-xs font-semibold rounded-lg border transition-all ${
+                    dateMode === mode
+                      ? 'bg-action-primary text-text-on-brand border-action-primary shadow-sm'
+                      : 'bg-surface-card text-text-secondary border-border-default hover:border-action-primary/50 hover:text-text-primary'
+                  }`}
+                >
+                  {mode === 'hoje' ? '📅 Hoje' : '☀️ Amanhã'}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => selectDateMode('custom')}
+                className={`px-3 py-1 text-xs font-semibold rounded-lg border transition-all ${
+                  dateMode === 'custom'
+                    ? 'bg-action-primary text-text-on-brand border-action-primary shadow-sm'
+                    : 'bg-surface-card text-text-secondary border-border-default hover:border-action-primary/50 hover:text-text-primary'
+                }`}
+              >
+                📆 Outra data
+              </button>
+
+              {/* Custom date picker */}
+              {dateMode === 'custom' && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex items-center gap-2 bg-surface-card px-3 py-1.5 border border-action-primary/50 rounded-lg shadow-sm"
+                >
+                  <input 
+                    type="date" 
+                    value={dueDate}
+                    onChange={e => setDueDate(e.target.value)}
+                    className="bg-transparent text-sm focus:outline-none text-text-primary"
+                    autoFocus
+                  />
+                </motion.div>
+              )}
+              
+              {/* Date summary pill when shortcut is active */}
+              {dueDate && dateMode !== 'custom' && (
+                <span className="text-xs text-text-secondary bg-surface-elevated px-2 py-1 rounded-md border border-border-default">
+                  {dueDate}
+                </span>
+              )}
+            </div>
+
+            {/* Options Row: Time, Duration, Priority */}
+            <div className="flex flex-wrap items-center gap-3 md:gap-4 px-1">
+              {/* Time picker — disabled until a date is chosen */}
+              <div
+                title={dueDate ? 'Horário de execução' : 'Defina uma data primeiro'}
+                className={`flex items-center gap-2 bg-surface-card backdrop-blur px-3 py-1.5 border rounded-lg shadow-sm transition-all ${
+                  dueDate ? 'border-border-default' : 'border-border-default/40 opacity-40 pointer-events-none'
+                }`}
+              >
+                <AlarmClock className="w-4 h-4 text-text-secondary" />
                 <input 
-                  type="date" 
-                  value={dueDate}
-                  onChange={e => setDueDate(e.target.value)}
-                  className="bg-transparent text-sm focus:outline-none text-text-primary color-scheme-dark"
+                  type="time" 
+                  value={dueTime}
+                  onChange={e => setDueTime(e.target.value)}
+                  disabled={!dueDate}
+                  className="bg-transparent text-sm focus:outline-none text-text-primary w-[80px]"
                 />
               </div>
 
