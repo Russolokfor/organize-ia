@@ -39,19 +39,25 @@ export default function OrganizationPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim()) return
-    await addTask({
-      title,
-      due_date: dueDate || null,
-      due_time: dueTime || null,
-      duration_min: parseInt(duration) || 30,
-      priority: parseInt(priority) as 1 | 2 | 3
-    })
-    setTitle('')
-    setDueDate('')
-    setDueTime('')
-    setDateMode('none')
-    setDuration('30')
-    setPriority('3')
+    
+    try {
+      await addTask({
+        title,
+        due_date: dueDate || null,
+        due_time: dueTime || null,
+        duration_min: parseInt(duration) || 30,
+        priority: parseInt(priority) as 1 | 2 | 3
+      })
+      setTitle('')
+      setDueDate('')
+      setDueTime('')
+      setDateMode('none')
+      setDuration('30')
+      setPriority('3')
+    } catch (err: any) {
+      console.error(err)
+      alert(`Erro ao criar tarefa: ${err.message}`)
+    }
   }
 
   React.useEffect(() => {
