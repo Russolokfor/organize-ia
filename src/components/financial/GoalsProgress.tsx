@@ -3,16 +3,20 @@
 import * as React from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { useFinancial } from '@/components/financial/FinancialProvider'
-import { Trash2 } from 'lucide-react'
+import { Trash2, AlertTriangle, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Button } from '@/components/ui/button'
 
 export function GoalsProgress() {
   const { goals, deleteGoal } = useFinancial()
+  const [goalToDelete, setGoalToDelete] = React.useState<string | null>(null)
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
   }
 
   return (
+    <>
     <Card className="bg-surface-card backdrop-blur-sm border-border-default shadow-card">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-medium text-text-primary">Metas e Reservas</CardTitle>
@@ -32,11 +36,7 @@ export function GoalsProgress() {
                   <span className="font-medium text-text-primary pr-2">{goal.title}</span>
                   <div className="flex items-center gap-2">
                     <button 
-                      onClick={() => {
-                        if(confirm('Tem certeza que deseja excluir esta meta?')) {
-                          deleteGoal(goal.id)
-                        }
-                      }}
+                      onClick={() => setGoalToDelete(goal.id)}
                       className="opacity-0 group-hover:opacity-100 p-1 text-text-secondary hover:text-status-error hover:bg-status-error/10 rounded transition-all"
                       title="Excluir Meta"
                     >
@@ -62,5 +62,53 @@ export function GoalsProgress() {
         )}
       </CardContent>
     </Card>
+
+    {/* Custom Delete Confirmation Modal */}
+    <AnimatePresence>
+      {goalToDelete && (
+        <>
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50"
+            onClick={() => setGoalToDelete(null)}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-surface-card border border-border-default shadow-card rounded-2xl p-6 z-50"
+          >
+            <div className="flex items-start gap-4 mb-6">
+              <div className="p-3 bg-status-error/10 text-status-error rounded-full shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-text-primary mb-1">Excluir Meta?</h2>
+                <p className="text-sm text-text-secondary">
+                  Tem certeza que deseja excluir esta meta? Essa ação não poderá ser desfeita.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-3 mt-4">
+               <Button variant="outline" onClick={() => setGoalToDelete(null)} className="h-10 px-4 text-text-primary border-border-default bg-transparent hover:bg-surface-elevated">
+                 Cancelar
+               </Button>
+               <Button 
+                 variant="danger" 
+                 className="h-10 px-4 bg-status-error hover:bg-red-600 text-white border-0"
+                 onClick={() => {
+                   deleteGoal(goalToDelete)
+                   setGoalToDelete(null)
+                 }}
+               >
+                 Excluir Meta
+               </Button>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+    </>
   )
 }
