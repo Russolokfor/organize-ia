@@ -50,6 +50,18 @@ export function FinancialCharts() {
     return dailyData
   }, [entries])
 
+  const chartTicks = React.useMemo(() => {
+    if (chartData.length === 0) return []
+    // To ensure perfect horizontal alignment and no weird automatic skips
+    // we define explicit, evenly spaced ticks.
+    const lastDay = chartData[chartData.length - 1].day
+    const ticks = ['Dia 1', 'Dia 8', 'Dia 15', 'Dia 22']
+    if (!ticks.includes(lastDay)) {
+      ticks.push(lastDay)
+    }
+    return ticks
+  }, [chartData])
+
   return (
     <Card className="bg-surface-card backdrop-blur-sm border-border-default shadow-card">
       <CardHeader>
@@ -69,7 +81,15 @@ export function FinancialCharts() {
                   <stop offset="95%" stopColor="rgb(239, 68, 68)" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <XAxis dataKey="day" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+              <XAxis 
+                dataKey="day" 
+                stroke="#888888" 
+                fontSize={12} 
+                tickLine={false} 
+                axisLine={false} 
+                ticks={chartTicks}
+                interval={0}
+              />
               <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `R$${value}`} />
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#333333" />
               <Tooltip 
