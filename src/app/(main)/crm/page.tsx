@@ -7,7 +7,7 @@ import { CrmProvider, useCrm } from '@/components/crm/CrmProvider'
 import { ClientType, Client } from '@/types/crm'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { format, parseISO, isPast, differenceInDays, addMonths, addYears } from 'date-fns'
+import { format, parseISO, isPast, differenceInDays, addMonths, addYears, isValid } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 import { ClientModal } from '@/components/crm/ClientModal'
@@ -16,6 +16,8 @@ function PaymentCountdown({ client, onPaymentAction }: { client: Client, onPayme
   if (!client.next_payment_date) return null;
   
   const nextDate = parseISO(client.next_payment_date);
+  if (!isValid(nextDate)) return null;
+
   const today = new Date();
   
   // Strip time for accurate day difference
@@ -304,9 +306,19 @@ function CrmDashboard() {
                      </div>
                      <div>
                        <p className="text-xs text-text-secondary">Próx. Pagamento</p>
-                       <p className={`font-medium ${client.next_payment_date && isPast(parseISO(client.next_payment_date)) ? 'text-status-error' : 'text-text-primary'}`}>
-                         {client.next_payment_date ? format(parseISO(client.next_payment_date), 'dd MMM yyyy', { locale: ptBR }) : '-'}
-                       </p>
+                       {(() => {
+                         const rawDate = client.next_payment_date;
+                         if (!rawDate) return <p className="font-medium text-text-primary">-</p>;
+                         const parsed = parseISO(rawDate);
+                         if (!isValid(parsed)) return <p className="font-medium text-text-primary">{rawDate}</p>;
+                         
+                         const past = isPast(parsed);
+                         return (
+                           <p className={`font-medium ${past ? 'text-status-error' : 'text-text-primary'}`}>
+                             {format(parsed, 'dd MMM yyyy', { locale: ptBR })}
+                           </p>
+                         );
+                       })()}
                      </div>
                    </div>
 
