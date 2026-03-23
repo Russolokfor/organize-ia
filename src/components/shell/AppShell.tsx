@@ -16,7 +16,8 @@ import {
   X,
   Wallet,
   Settings,
-  Users
+  Users,
+  Receipt
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -34,6 +35,7 @@ const navCategories = [
       { name: 'Organização', href: '/organization', icon: ListTodo },
       { name: 'Rotina', href: '/routine', icon: CalendarClock },
       { name: 'Financeiro', href: '/financial', icon: Wallet },
+      { name: 'Contas a Pagar', href: '/payables', icon: Receipt },
       { name: 'Clientes', href: '/crm', icon: Users },
     ]
   },
