@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Plus, Users, Building2, Search, ArrowRight, Activity, CalendarDays } from 'lucide-react'
+import { Plus, Users, Building2, Search, ArrowRight, Activity, CalendarDays, Trash2, Copy, AlertTriangle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CrmProvider, useCrm } from '@/components/crm/CrmProvider'
 import { ClientType, Client } from '@/types/crm'
@@ -64,11 +64,12 @@ function PaymentCountdown({ client, onPaymentAction }: { client: Client, onPayme
 }
 
 function CrmDashboard() {
-  const { clients, loading, updateClient } = useCrm()
+  const { clients, loading, updateClient, addClient, deleteClient } = useCrm()
   const [viewMode, setViewMode] = React.useState<ClientType>('individual')
   const [searchQuery, setSearchQuery] = React.useState('')
   const [isModalOpen, setIsModalOpen] = React.useState(false)
   const [editingClient, setEditingClient] = React.useState<Client | null>(null)
+  const [clientToDelete, setClientToDelete] = React.useState<string | null>(null)
 
   const filteredClients = clients.filter(client => {
     const matchesView = client.type === viewMode
@@ -137,6 +138,18 @@ function CrmDashboard() {
       await updateClient(client.id, {
         status: 'defaulting'
       });
+    }
+  }
+
+  const handleDuplicate = async (client: Client) => {
+    try {
+      const { id, created_at, updated_at, user_id, ...rest } = client
+      await addClient({
+        ...rest,
+        name: `${client.name} (Cópia)`
+      })
+    } catch (e) {
+      console.error(e)
     }
   }
 
@@ -261,9 +274,27 @@ function CrmDashboard() {
                          <p className="text-xs text-text-secondary truncate">{client.email || 'Sem email'}</p>
                        </div>
                      </div>
-                     <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full border ${getStatusColor(client.status)}`}>
-                        {getStatusLabel(client.status)}
-                     </span>
+                     <div className="flex flex-col items-end gap-2">
+                       <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full border ${getStatusColor(client.status)}`}>
+                          {getStatusLabel(client.status)}
+                       </span>
+                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                         <button 
+                           onClick={(e) => { e.stopPropagation(); handleDuplicate(client) }}
+                           className="p-1.5 text-text-secondary hover:text-text-primary hover:bg-surface-elevated rounded-lg transition-colors border border-transparent hover:border-border-default shadow-sm"
+                           title="Duplicar Cliente"
+                         >
+                           <Copy className="w-4 h-4" />
+                         </button>
+                         <button 
+                           onClick={(e) => { e.stopPropagation(); setClientToDelete(client.id) }}
+                           className="p-1.5 text-text-secondary hover:text-status-error hover:bg-status-error/10 rounded-lg transition-colors border border-transparent hover:border-status-error/20 shadow-sm"
+                           title="Excluir Cliente"
+                         >
+                           <Trash2 className="w-4 h-4" />
+                         </button>
+                       </div>
+                     </div>
                    </div>
 
                    <div className="grid grid-cols-2 gap-2 text-sm border-t border-border-subtle pt-3 mt-3">
@@ -293,6 +324,52 @@ function CrmDashboard() {
         onClose={() => setIsModalOpen(false)} 
         client={editingClient}
       />
+
+      {/* Delete Form Modal */}
+      <AnimatePresence>
+        {clientToDelete && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50"
+              onClick={() => setClientToDelete(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-surface-card border border-border-default shadow-card rounded-2xl p-6 z-[60]"
+            >
+              <div className="flex items-start gap-4 mb-6">
+                <div className="p-3 bg-status-error/10 text-status-error rounded-full shrink-0">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-text-primary mb-1">Excluir Cliente?</h2>
+                  <p className="text-sm text-text-secondary">
+                    Tem certeza que deseja excluir este cliente? Essa ação não poderá ser desfeita.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-3 mt-4">
+                 <Button variant="outline" onClick={() => setClientToDelete(null)} className="h-10 px-4 text-text-primary border-border-default bg-transparent hover:bg-surface-elevated">
+                   Cancelar
+                 </Button>
+                 <Button 
+                   className="h-10 px-4 bg-status-error hover:bg-red-600 text-white border-0"
+                   onClick={() => {
+                     deleteClient(clientToDelete)
+                     setClientToDelete(null)
+                   }}
+                 >
+                   Excluir Cliente
+                 </Button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
