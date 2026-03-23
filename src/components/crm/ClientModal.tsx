@@ -8,6 +8,46 @@ import { useCrm } from './CrmProvider'
 import { Button } from '@/components/ui/button'
 import { format } from 'date-fns'
 
+const formatDocument = (val: string, type: ClientType) => {
+  let v = val.replace(/\D/g, '')
+  if (type === 'individual') {
+    v = v.slice(0, 11)
+    if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4')
+    else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3')
+    else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2')
+    return v
+  } else {
+    v = v.slice(0, 14)
+    if (v.length > 12) v = v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{1,2})/, '$1.$2.$3/$4-$5')
+    else if (v.length > 8) v = v.replace(/(\d{2})(\d{3})(\d{3})(\d{1,4})/, '$1.$2.$3/$4')
+    else if (v.length > 5) v = v.replace(/(\d{2})(\d{3})(\d{1,3})/, '$1.$2.$3')
+    else if (v.length > 2) v = v.replace(/(\d{2})(\d{1,3})/, '$1.$2')
+    return v
+  }
+}
+
+const formatPhone = (val: string) => {
+  let v = val.replace(/\D/g, '')
+  v = v.slice(0, 11)
+  if (v.length > 10) v = v.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
+  else if (v.length > 6) v = v.replace(/(\d{2})(\d{4})(\d{1,4})/, '($1) $2-$3')
+  else if (v.length > 2) v = v.replace(/(\d{2})(\d{1,5})/, '($1) $2')
+  else if (v.length > 0) v = v.replace(/(\d{1,2})/, '($1')
+  return v
+}
+
+const formatCurrencyInput = (val: string) => {
+  let v = val.replace(/\D/g, '')
+  if (!v) return ''
+  const numberValue = parseInt(v, 10) / 100
+  return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numberValue)
+}
+
+const parseCurrency = (val: string) => {
+  if (!val) return null
+  return parseFloat(val.replace(/\./g, '').replace(',', '.'))
+}
+
 interface ClientModalProps {
   isOpen: boolean
   onClose: () => void
@@ -45,7 +85,7 @@ export function ClientModal({ isOpen, onClose, client }: ClientModalProps) {
       setEmail(client.email || '')
       setPhone(client.phone || '')
       setStatus(client.status)
-      setServiceValue(client.service_value ? client.service_value.toString() : '')
+      setServiceValue(client.service_value ? formatCurrencyInput((client.service_value * 100).toFixed(0)) : '')
       setBillingCycle(client.billing_cycle || 'monthly')
       setJoinDate(client.join_date || '')
       setNextPaymentDate(client.next_payment_date || '')
@@ -81,7 +121,7 @@ export function ClientModal({ isOpen, onClose, client }: ClientModalProps) {
         email: email || null,
         phone: phone || null,
         status,
-        service_value: serviceValue ? parseFloat(serviceValue) : null,
+        service_value: serviceValue ? parseCurrency(serviceValue) : null,
         billing_cycle: billingCycle,
         join_date: joinDate || null,
         next_payment_date: nextPaymentDate || null,
@@ -197,7 +237,7 @@ export function ClientModal({ isOpen, onClose, client }: ClientModalProps) {
                     <div className="space-y-1.5">
                        <label className="text-sm font-medium text-text-secondary">{type === 'individual' ? 'CPF' : 'CNPJ'}</label>
                        <input 
-                         value={document} onChange={e => setDocument(e.target.value)}
+                         value={document} onChange={e => setDocument(formatDocument(e.target.value, type))}
                          className="w-full bg-surface-elevated border border-border-default rounded-xl px-4 py-2.5 text-text-primary focus:outline-none focus:border-border-focus"
                          placeholder={type === 'individual' ? '000.000.000-00' : '00.000.000/0000-00'}
                        />
@@ -216,7 +256,7 @@ export function ClientModal({ isOpen, onClose, client }: ClientModalProps) {
                     <div className="space-y-1.5">
                        <label className="text-sm font-medium text-text-secondary">Telefone / WhatsApp</label>
                        <input 
-                         value={phone} onChange={e => setPhone(e.target.value)}
+                         value={phone} onChange={e => setPhone(formatPhone(e.target.value))}
                          className="w-full bg-surface-elevated border border-border-default rounded-xl px-4 py-2.5 text-text-primary focus:outline-none focus:border-border-focus"
                          placeholder="(11) 90000-0000"
                        />
@@ -246,10 +286,10 @@ export function ClientModal({ isOpen, onClose, client }: ClientModalProps) {
                       <div className="space-y-1.5">
                          <label className="text-sm font-medium text-text-secondary">Valor do Serviço / Contrato (R$)</label>
                          <input 
-                           type="number" step="0.01"
-                           value={serviceValue} onChange={e => setServiceValue(e.target.value)}
+                           type="text"
+                           value={serviceValue} onChange={e => setServiceValue(formatCurrencyInput(e.target.value))}
                            className="w-full bg-surface-elevated border border-border-default rounded-xl px-4 py-2.5 text-text-primary focus:outline-none focus:border-border-focus"
-                           placeholder="Ex: 1500.00"
+                           placeholder="0,00"
                          />
                       </div>
 
