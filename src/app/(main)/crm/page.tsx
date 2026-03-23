@@ -227,7 +227,7 @@ function CrmDashboard() {
       </div>
 
       {/* Client List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
         {loading ? (
           [1,2,3].map(i => <div key={i} className="h-40 bg-surface-subtle animate-pulse rounded-2xl" />)
         ) : filteredClients.length === 0 ? (
@@ -247,7 +247,7 @@ function CrmDashboard() {
                key={client.id}
                onClick={() => { setEditingClient(client); setIsModalOpen(true) }}
             >
-              <Card className="group cursor-pointer hover:border-border-focus transition-all duration-300 h-full bg-surface-card shadow-sm hover:shadow-md">
+              <Card className="group cursor-pointer hover:border-border-focus transition-all duration-300 bg-surface-card shadow-sm hover:shadow-md">
                 <CardContent className="p-5 space-y-4">
                    <div className="flex justify-between items-start">
                      <div className="flex items-center gap-3">
