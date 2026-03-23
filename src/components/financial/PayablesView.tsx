@@ -3,14 +3,14 @@
 import * as React from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, Search, CheckCircle2, Clock, AlertCircle, Copy, Trash2, Receipt } from 'lucide-react'
+import { Plus, Search, CheckCircle2, Clock, AlertCircle, Copy, Trash2, Receipt, Wallet } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format, parseISO, isPast, differenceInDays, isValid } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { FinancialEntry } from '@/types'
 import { financialEntryService } from '@/services/financialEntryService'
 
-export function PayablesView() {
+export function PayablesView({ onAddClick }: { onAddClick?: () => void }) {
   const [entries, setEntries] = React.useState<FinancialEntry[]>([])
   const [loading, setLoading] = React.useState(true)
   const [viewMode, setViewMode] = React.useState<'pending' | 'paid' | 'overdue'>('pending')
@@ -118,13 +118,29 @@ export function PayablesView() {
   // KPIs
   const totalPending = processedEntries.filter(e => e.status === 'pending').reduce((acc, e) => acc + Number(e.amount), 0)
   const totalOverdue = processedEntries.filter(e => e.status === 'overdue').reduce((acc, e) => acc + Number(e.amount), 0)
+  const totalThisMonth = processedEntries.filter(e => {
+    if (!e.due_date) return false;
+    const d = parseISO(e.due_date);
+    return isValid(d) && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).reduce((acc, e) => acc + Number(e.amount), 0)
 
   return (
     <div className="space-y-6 mt-4">
       {/* Header Removed for Portal Integration */}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-surface-card border-border-default shadow-card">
+          <CardContent className="p-5 flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-text-secondary">Gasto do Mês Atual</p>
+              <h3 className="text-2xl font-bold text-text-primary">{formatCurrency(totalThisMonth)}</h3>
+            </div>
+            <div className="w-12 h-12 rounded-xl bg-action-primary/10 flex items-center justify-center text-action-primary">
+              <Wallet className="w-6 h-6" />
+            </div>
+          </CardContent>
+        </Card>
         <Card className="bg-surface-card border-border-default shadow-card">
           <CardContent className="p-5 flex items-center justify-between">
             <div className="space-y-1">
@@ -172,15 +188,22 @@ export function PayablesView() {
           </button>
         </div>
 
-        <div className="relative w-full md:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
-          <input 
-            type="text" 
-            placeholder="Buscar conta..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-border-default bg-surface-base text-sm focus:outline-none focus:ring-2 focus:ring-action-primary text-text-primary transition-all"
-          />
+        <div className="flex gap-2 w-full md:w-auto">
+          <div className="relative flex-1 md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+            <input 
+              type="text" 
+              placeholder="Buscar conta..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-border-default bg-surface-base text-sm focus:outline-none focus:ring-2 focus:ring-action-primary text-text-primary transition-all"
+            />
+          </div>
+          {onAddClick && (
+            <Button onClick={onAddClick} className="bg-action-primary hover:bg-action-primary-hover text-text-on-brand rounded-xl h-10 px-4 whitespace-nowrap hidden md:flex">
+              <Plus className="w-4 h-4 mr-2" /> Nova Conta
+            </Button>
+          )}
         </div>
       </div>
 
@@ -240,7 +263,7 @@ export function PayablesView() {
                          }`}>
                             {entry.status === 'paid' ? 'Pago' : entry.status === 'overdue' ? 'Em Atraso' : 'Pendente'}
                          </span>
-                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                         <div className="flex items-center gap-1 transition-opacity pt-1">
                            <button 
                              onClick={() => handleDelete(entry.id)}
                              className="p-1.5 text-text-secondary hover:text-status-error hover:bg-status-error/10 rounded-lg transition-colors border border-transparent hover:border-status-error/20"

@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
+import { addMonths, parseISO, format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useFinancial } from '@/components/financial/FinancialProvider'
@@ -54,6 +55,7 @@ export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose
   const [dueDate, setDueDate] = React.useState('')
   const [isPaid, setIsPaid] = React.useState(true)
   const [recurrence, setRecurrence] = React.useState('none')
+  const [installmentsCount, setInstallmentsCount] = React.useState('2')
   const [goalId, setGoalId] = React.useState('none')
   const [ignoreBalance, setIgnoreBalance] = React.useState(false)
 
@@ -63,6 +65,7 @@ export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose
       setAmount('')
       setDueDate('')
       setRecurrence('none')
+      setInstallmentsCount('2')
       setGoalId('none')
       setIgnoreBalance(false)
     }
@@ -73,29 +76,38 @@ export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose
     if (!title || !amount) return
     
     const finalDate = dueDate || new Date().toISOString().split('T')[0]
-    const isRecurring = recurrence !== 'none'
+    const isInstallments = recurrence === 'installments'
+    const isRecurring = recurrence !== 'none' && !isInstallments
     const parsedAmount = parseFloat(amount)
+    const iterations = isInstallments ? parseInt(installmentsCount, 10) : 1
+    const baseDate = parseISO(finalDate)
     
     try {
-      await addEntry({
-        title,
-        amount: parsedAmount,
-        type,
-        category,
-        is_paid: type === 'income' ? true : isPaid,
-        paid_at: (type === 'income' || isPaid) ? new Date().toISOString() : null,
-        due_date: finalDate,
-        notes: null,
-        is_recurring: isRecurring,
-        recurrence_type: isRecurring ? recurrence : null,
-        is_fixed: isRecurring,
-        reference_month: referenceMonth,
-        goal_id: goalId !== 'none' ? goalId : null,
-        ignore_from_balance: goalId !== 'none' ? ignoreBalance : false
-      })
+      for (let i = 0; i < iterations; i++) {
+        const currentDate = addMonths(baseDate, i)
+        const dateString = format(currentDate, 'yyyy-MM-dd')
+        const refMonth = format(currentDate, 'yyyy-MM')
+        
+        await addEntry({
+          title: isInstallments ? `${title} (${i + 1}/${iterations})` : title,
+          amount: parsedAmount, // Note: Este é o valor de "Cada Parcela" inserido pelo próprio usuário
+          type,
+          category,
+          is_paid: type === 'income' ? true : (i === 0 ? isPaid : false), // Apenas a primeira parcela herda o status 'paga' inicial num parcelamento de despesa futura
+          paid_at: (type === 'income' || (i === 0 && isPaid)) ? new Date().toISOString() : null,
+          due_date: dateString,
+          notes: null,
+          is_recurring: isRecurring,
+          recurrence_type: isRecurring ? recurrence : null,
+          is_fixed: isRecurring,
+          reference_month: isInstallments ? refMonth : referenceMonth, // O valor singular avança pro mês atual se for só "referenceMonth", mas parcelamentos andam nos calendários. Mas wait, 'referenceMonth' do modal ou da data original? Avançamos a data. Para o primeiro usamos `referenceMonth` do view/hoje ou o mes do form. Vamos usar refMonth gerado localmente.
+          goal_id: goalId !== 'none' ? goalId : null,
+          ignore_from_balance: goalId !== 'none' ? ignoreBalance : false
+        })
+      }
 
       if (goalId !== 'none') {
-        const modifier = type === 'income' ? parsedAmount : -parsedAmount;
+        const modifier = type === 'income' ? (parsedAmount * iterations) : -(parsedAmount * iterations);
         await addFundsToGoal(goalId, modifier);
       }
 
@@ -177,10 +189,27 @@ export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose
                 <option value="none" className="bg-surface-elevated text-text-primary">Única vez</option>
                 <option value="weekly" className="bg-surface-elevated text-text-primary">Toda Semana</option>
                 <option value="biweekly" className="bg-surface-elevated text-text-primary">A cada 15 dias</option>
-                <option value="monthly" className="bg-surface-elevated text-text-primary">Todo Mês (12x)</option>
+                <option value="monthly" className="bg-surface-elevated text-text-primary">Mensal (Fixo/Infinito)</option>
+                <option value="installments" className="bg-surface-elevated text-status-warning">Parcelado (Tempo dtrm.)</option>
               </select>
             </div>
           </div>
+
+          {recurrence === 'installments' && (
+            <div className="space-y-1.5 pt-2">
+              <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Quantidade de Parcelas</label>
+              <Input 
+                type="number" 
+                min="2" 
+                max="360" 
+                value={installmentsCount} 
+                onChange={e => setInstallmentsCount(e.target.value)} 
+                className="h-12 bg-surface-card border-status-warning/50 focus-visible:ring-status-warning text-text-primary"
+                title="Insira o número de meses"
+              />
+              <p className="text-[10px] text-text-tertiary">O sistema vai criar automaticamente as parcelas nos meses seguintes.</p>
+            </div>
+          )}
 
           <div className="space-y-1.5 pt-2">
             <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Vincular a uma Meta / Reserva?</label>
