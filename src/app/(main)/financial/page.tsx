@@ -68,13 +68,13 @@ export default function FinancialPage() {
       <div className="flex w-full md:w-auto p-1 bg-surface-base rounded-xl mb-6 border border-border-default/50 max-w-fit">
         <button
           onClick={() => setActiveTab('overview')}
-          className={`whitespace-nowrap flex-1 px-6 py-2.5 text-sm font-semibold rounded-lg transition-all ${activeTab === 'overview' ? 'bg-surface-card text-text-primary shadow-sm border border-border-default' : 'text-text-secondary hover:text-text-primary'}`}
+          className={`whitespace-nowrap flex-1 px-6 py-2.5 text-sm font-semibold rounded-lg transition-all ${activeTab === 'overview' ? 'bg-surface-card text-text-primary shadow-sm border border-border-default' : 'border border-transparent text-text-secondary hover:text-text-primary'}`}
         >
           Visão Geral
         </button>
         <button
           onClick={() => setActiveTab('payables')}
-          className={`whitespace-nowrap flex-1 px-6 py-2.5 text-sm font-semibold rounded-lg transition-all ${activeTab === 'payables' ? 'bg-surface-card text-text-primary shadow-sm border border-border-default' : 'text-text-secondary hover:text-text-primary'}`}
+          className={`whitespace-nowrap flex-1 px-6 py-2.5 text-sm font-semibold rounded-lg transition-all ${activeTab === 'payables' ? 'bg-surface-card text-text-primary shadow-sm border border-border-default' : 'border border-transparent text-text-secondary hover:text-text-primary'}`}
         >
           Contas a Pagar
         </button>

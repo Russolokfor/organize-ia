@@ -170,19 +170,19 @@ export function PayablesView({ onAddClick }: { onAddClick?: () => void }) {
         <div className="flex w-full md:w-auto p-1 bg-surface-base rounded-xl">
           <button
             onClick={() => setViewMode('pending')}
-            className={`flex-1 md:w-32 py-2 text-sm font-semibold rounded-lg transition-all ${viewMode === 'pending' ? 'bg-surface-card text-text-primary shadow-sm border border-border-default' : 'text-text-secondary hover:text-text-primary'}`}
+            className={`flex-1 md:w-32 py-2 text-sm font-semibold rounded-lg transition-all ${viewMode === 'pending' ? 'bg-surface-card text-text-primary shadow-sm border border-border-default' : 'border border-transparent text-text-secondary hover:text-text-primary'}`}
           >
             Pendentes
           </button>
           <button
             onClick={() => setViewMode('overdue')}
-            className={`flex-1 md:w-32 py-2 text-sm font-semibold rounded-lg transition-all ${viewMode === 'overdue' ? 'bg-status-error/10 text-status-error shadow-sm border border-status-error/20' : 'text-text-secondary hover:text-text-primary'}`}
+            className={`flex-1 md:w-32 py-2 text-sm font-semibold rounded-lg transition-all ${viewMode === 'overdue' ? 'bg-status-error/10 text-status-error shadow-sm border border-status-error/20' : 'border border-transparent text-text-secondary hover:text-text-primary'}`}
           >
             Atrasadas
           </button>
           <button
             onClick={() => setViewMode('paid')}
-            className={`flex-1 md:w-32 py-2 text-sm font-semibold rounded-lg transition-all ${viewMode === 'paid' ? 'bg-surface-card text-text-primary shadow-sm border border-border-default' : 'text-text-secondary hover:text-text-primary'}`}
+            className={`flex-1 md:w-32 py-2 text-sm font-semibold rounded-lg transition-all ${viewMode === 'paid' ? 'bg-surface-card text-text-primary shadow-sm border border-border-default' : 'border border-transparent text-text-secondary hover:text-text-primary'}`}
           >
             Pagas
           </button>
