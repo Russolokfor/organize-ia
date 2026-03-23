@@ -81,6 +81,9 @@ export interface FinancialEntry {
   recurrence_type: string | null
   is_fixed: boolean
   reference_month: string // YYYY-MM format
+  client_id?: string | null
+  goal_id?: string | null
+  ignore_from_balance?: boolean
   created_at: string
   updated_at: string
 }

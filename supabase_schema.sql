@@ -163,3 +163,6 @@ CREATE TRIGGER update_financial_goals_updated_at
 BEFORE UPDATE ON public.financial_goals
 FOR EACH ROW
 EXECUTE FUNCTION public.handle_updated_at();
+
+-- Migration: add_goal_tracking_to_entries
+ALTER TABLE financial_entries ADD COLUMN goal_id UUID REFERENCES financial_goals(id) ON DELETE SET NULL, ADD COLUMN ignore_from_balance BOOLEAN DEFAULT false;

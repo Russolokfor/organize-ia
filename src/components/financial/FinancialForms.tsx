@@ -46,7 +46,7 @@ function Modal({ isOpen, onClose, title, children }: { isOpen: boolean, onClose:
 }
 
 export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
-  const { addEntry, referenceMonth } = useFinancial()
+  const { addEntry, referenceMonth, goals, addFundsToGoal } = useFinancial()
   const [type, setType] = React.useState<'income' | 'expense'>('expense')
   const [title, setTitle] = React.useState('')
   const [amount, setAmount] = React.useState('')
@@ -54,6 +54,8 @@ export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose
   const [dueDate, setDueDate] = React.useState('')
   const [isPaid, setIsPaid] = React.useState(true)
   const [recurrence, setRecurrence] = React.useState('none')
+  const [goalId, setGoalId] = React.useState('none')
+  const [ignoreBalance, setIgnoreBalance] = React.useState(false)
 
   React.useEffect(() => {
     if (!isOpen) {
@@ -61,6 +63,8 @@ export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose
       setAmount('')
       setDueDate('')
       setRecurrence('none')
+      setGoalId('none')
+      setIgnoreBalance(false)
     }
   }, [isOpen])
 
@@ -70,11 +74,12 @@ export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose
     
     const finalDate = dueDate || new Date().toISOString().split('T')[0]
     const isRecurring = recurrence !== 'none'
+    const parsedAmount = parseFloat(amount)
     
     try {
       await addEntry({
         title,
-        amount: parseFloat(amount),
+        amount: parsedAmount,
         type,
         category,
         is_paid: type === 'income' ? true : isPaid,
@@ -84,8 +89,16 @@ export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose
         is_recurring: isRecurring,
         recurrence_type: isRecurring ? recurrence : null,
         is_fixed: isRecurring,
-        reference_month: referenceMonth
+        reference_month: referenceMonth,
+        goal_id: goalId !== 'none' ? goalId : null,
+        ignore_from_balance: goalId !== 'none' ? ignoreBalance : false
       })
+
+      if (goalId !== 'none') {
+        const modifier = type === 'income' ? parsedAmount : -parsedAmount;
+        await addFundsToGoal(goalId, modifier);
+      }
+
       onClose()
     } catch(err) {
       console.error(err)
@@ -168,6 +181,39 @@ export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose
               </select>
             </div>
           </div>
+
+          <div className="space-y-1.5 pt-2">
+            <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Vincular a uma Meta / Reserva?</label>
+            <select 
+              value={goalId} 
+              onChange={e => setGoalId(e.target.value)}
+              className="flex h-12 w-full rounded-md border border-border-default bg-surface-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action-primary text-text-primary"
+            >
+              <option value="none" className="bg-surface-elevated text-text-primary">Não vincular</option>
+              {goals.map(g => (
+                <option key={g.id} value={g.id} className="bg-surface-elevated text-text-primary">{g.title}</option>
+              ))}
+            </select>
+          </div>
+
+          {goalId !== 'none' && (
+            <div className="pt-2">
+              <label className="flex items-center gap-3 text-sm font-medium cursor-pointer text-text-primary bg-surface-elevated p-3 rounded-xl border border-border-default/50 hover:border-border-default transition-colors">
+                <div className="relative flex items-center justify-center w-5 h-5">
+                  <input 
+                    type="checkbox" 
+                    checked={ignoreBalance} 
+                    onChange={e => setIgnoreBalance(e.target.checked)} 
+                    className="appearance-none peer w-5 h-5 border-2 border-border-focus rounded cursor-pointer checked:bg-action-primary checked:border-action-primary transition-all" 
+                  />
+                  <svg className="absolute w-3 h-3 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 5L5 9L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                Isolar valor (Não contabilizar no saldo do mês)
+              </label>
+            </div>
+          )}
 
           {type === 'expense' && (
             <div className="pt-2">

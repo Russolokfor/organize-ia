@@ -33,6 +33,8 @@ export function FinancialCharts() {
 
     // Aggregate entries into their respective days
     entries.forEach(entry => {
+      if (entry.ignore_from_balance) return
+
       // due_date is YYYY-MM-DD
       const dateStr = entry.due_date
       if (!dateStr) return

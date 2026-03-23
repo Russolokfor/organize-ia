@@ -11,6 +11,8 @@ export function GoalsProgress() {
   const { goals, deleteGoal } = useFinancial()
   const [goalToDelete, setGoalToDelete] = React.useState<string | null>(null)
 
+  const totalSaved = goals.reduce((sum, g) => sum + Number(g.current_amount), 0)
+
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
   }
@@ -19,7 +21,12 @@ export function GoalsProgress() {
     <>
     <Card className="bg-surface-card backdrop-blur-sm border-border-default shadow-card">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-medium text-text-primary">Metas e Reservas</CardTitle>
+        <CardTitle className="text-lg font-medium text-text-primary flex items-center justify-between w-full">
+          <span>Metas e Reservas</span>
+          {goals.length > 0 && (
+            <span className="text-sm font-normal text-text-secondary">Total: <span className="text-status-success font-medium">{formatCurrency(totalSaved)}</span></span>
+          )}
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {goals.length === 0 ? (
@@ -37,10 +44,10 @@ export function GoalsProgress() {
                   <div className="flex items-center gap-2">
                     <button 
                       onClick={() => setGoalToDelete(goal.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1 text-text-secondary hover:text-status-error hover:bg-status-error/10 rounded transition-all"
+                      className="p-1.5 text-text-secondary hover:text-status-error hover:bg-status-error/10 rounded-md transition-all border border-transparent hover:border-status-error/20"
                       title="Excluir Meta"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                     <span className="text-text-secondary whitespace-nowrap">
                       {pct.toFixed(0)}%

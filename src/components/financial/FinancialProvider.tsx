@@ -89,6 +89,8 @@ export function FinancialProvider({ children }: { children: React.ReactNode }) {
     let overdueBillsCount = 0
 
     entries.forEach(entry => {
+      if (entry.ignore_from_balance) return;
+
       if (entry.type === 'income') {
         totalIncome += Number(entry.amount)
       } else if (entry.type === 'expense') {
