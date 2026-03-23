@@ -56,11 +56,13 @@ export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose
   const [isPaid, setIsPaid] = React.useState(true)
   const [recurrence, setRecurrence] = React.useState('none')
   const [installmentsCount, setInstallmentsCount] = React.useState('2')
+  const [step, setStep] = React.useState(1)
   const [goalId, setGoalId] = React.useState('none')
   const [ignoreBalance, setIgnoreBalance] = React.useState(false)
 
   React.useEffect(() => {
     if (!isOpen) {
+      setStep(1)
       setTitle('')
       setAmount('')
       setDueDate('')
@@ -121,144 +123,241 @@ export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Nova Transação">
       <form onSubmit={handleSubmit} className="flex flex-col">
-        <div className="flex p-1 bg-surface-elevated rounded-xl border border-border-default/50 mb-6">
-          <button 
-            type="button"
-            onClick={() => setType('expense')}
-            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${type === 'expense' ? 'bg-status-error text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
-          >
-            Despesa
-          </button>
-          <button 
-            type="button"
-            onClick={() => setType('income')}
-            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${type === 'income' ? 'bg-status-success text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
-          >
-            Receita
-          </button>
+        {/* Step Indicator Headers */}
+        <div className="flex justify-center items-center gap-4 mb-8 mt-2 relative">
+          <div className="absolute top-1/2 left-[20%] right-[20%] h-[2px] bg-surface-base -z-10 -translate-y-1/2 rounded" />
+          
+          {[1, 2, 3].map((s) => (
+            <div 
+              key={s} 
+              className={`w-10 h-10 rounded-full flex flex-col items-center justify-center font-bold text-sm transition-all duration-300 z-10 ${
+                step === s 
+                  ? 'bg-action-primary text-text-on-brand shadow-lg shadow-action-primary/20 scale-110' 
+                  : step > s 
+                    ? 'bg-surface-elevated text-text-primary border-2 border-action-primary' 
+                    : 'bg-surface-base text-text-tertiary border-2 border-surface-border'
+              }`}
+            >
+              {s}
+            </div>
+          ))}
         </div>
 
-        <div className="flex flex-col items-center justify-center py-8 mb-6 rounded-2xl bg-surface-base/50 border border-border-default/30">
-          <span className="text-xs font-semibold uppercase tracking-wider text-text-tertiary mb-2">Valor da {type === 'income' ? 'Receita' : 'Despesa'}</span>
-          <div className="flex items-center justify-center">
-            <span className="text-3xl font-medium text-text-tertiary mr-2">R$</span>
-            <input
-              required
-              type="number"
-              step="0.01"
-              value={amount}
-              onChange={e => setAmount(e.target.value)}
-              className="text-5xl font-bold bg-transparent border-none focus:ring-0 text-center w-48 text-text-primary placeholder:text-surface-border p-0 m-0"
-              placeholder="0.00"
-              autoFocus
-            />
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Título</label>
-            <Input required value={title} onChange={e => setTitle(e.target.value)} placeholder="Ex: Mercado, Salário..." className="h-12 bg-surface-card border-border-default focus-visible:ring-action-primary" />
-          </div>
-
-          <div className="flex gap-4">
-            <div className="space-y-1.5 flex-[1.5]">
-              <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Categoria</label>
-              <select 
-                value={category} 
-                onChange={e => setCategory(e.target.value)}
-                className="flex h-12 w-full rounded-md border border-border-default bg-surface-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action-primary text-text-primary"
+        <div className="relative overflow-hidden min-h-[300px]">
+          <AnimatePresence mode="wait">
+            {step === 1 && (
+              <motion.div 
+                key="step1" 
+                initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+                className="flex flex-col h-full"
               >
-                <option className="bg-surface-elevated text-text-primary">Alimentação</option>
-                <option className="bg-surface-elevated text-text-primary">Moradia</option>
-                <option className="bg-surface-elevated text-text-primary">Transporte</option>
-                <option className="bg-surface-elevated text-text-primary">Saúde</option>
-                <option className="bg-surface-elevated text-text-primary">Lazer</option>
-                <option className="bg-surface-elevated text-text-primary">Salário</option>
-                <option className="bg-surface-elevated text-text-primary">Outros</option>
-              </select>
-            </div>
-            <div className="space-y-1.5 flex-[1.2]">
-              <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Data (Opcional)</label>
-              <Input 
-                type="date" 
-                value={dueDate} 
-                onChange={e => setDueDate(e.target.value)} 
-                className="h-12 bg-surface-card border-border-default focus-visible:ring-action-primary color-scheme-dark"
-                title="Se não selecionar, usará a data de hoje"
-              />
-            </div>
-          </div>
+                <div className="flex p-1 bg-surface-elevated rounded-xl border border-border-default/50 mb-6">
+                  <button 
+                    type="button"
+                    onClick={() => setType('expense')}
+                    className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${type === 'expense' ? 'bg-status-error text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                  >
+                    Despesa
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => setType('income')}
+                    className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${type === 'income' ? 'bg-status-success text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                  >
+                    Receita
+                  </button>
+                </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Repetição</label>
-            <select 
-              value={recurrence} 
-              onChange={e => setRecurrence(e.target.value)}
-              className="flex h-12 w-full rounded-md border border-border-default bg-surface-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action-primary text-text-primary"
-            >
-              <option value="none" className="bg-surface-elevated text-text-primary">Única vez</option>
-              <option value="weekly" className="bg-surface-elevated text-text-primary">Toda Semana</option>
-              <option value="biweekly" className="bg-surface-elevated text-text-primary">A cada 15 dias</option>
-              <option value="monthly" className="bg-surface-elevated text-text-primary">Mensal (Fixo/Infinito)</option>
-              <option value="installments" className="bg-surface-elevated text-status-warning">Parcelado (Tempo dtrm.)</option>
-            </select>
-          </div>
+                <div className="flex flex-col items-center justify-center py-10 mb-6 rounded-2xl bg-surface-base/50 border border-border-default/30">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-text-tertiary mb-3">Valor da {type === 'income' ? 'Receita' : 'Despesa'}</span>
+                  <div className="flex items-center justify-center">
+                    <span className="text-3xl font-medium text-text-tertiary mr-2">R$</span>
+                    <input
+                      required
+                      type="number"
+                      step="0.01"
+                      value={amount}
+                      onChange={e => setAmount(e.target.value)}
+                      className="text-5xl font-bold bg-transparent border-none focus:ring-0 text-center w-56 text-text-primary placeholder:text-surface-border p-0 m-0"
+                      placeholder="0.00"
+                      autoFocus
+                    />
+                  </div>
+                </div>
 
-          {recurrence === 'installments' && (
-            <div className="space-y-1.5 pt-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Quantidade de Parcelas</label>
-              <Input 
-                type="number" 
-                min="2" 
-                max="360" 
-                value={installmentsCount} 
-                onChange={e => setInstallmentsCount(e.target.value)} 
-                className="h-12 bg-surface-card border-status-warning/50 focus-visible:ring-status-warning text-text-primary"
-                title="Insira o número de meses"
-              />
-              <p className="text-[10px] text-text-tertiary">Sistemas criará {installmentsCount} contas futuras automaticamente.</p>
-            </div>
-          )}
+                <div className="mt-auto pt-4">
+                  <Button 
+                    type="button" 
+                    onClick={() => {
+                      if (!amount || parseFloat(amount) <= 0) return;
+                      setStep(2);
+                    }}
+                    disabled={!amount || parseFloat(amount) <= 0}
+                    className="w-full h-12 text-base font-semibold bg-action-primary hover:bg-action-primary-hover text-text-on-brand shadow-lg transition-all rounded-xl disabled:opacity-50"
+                  >
+                    Continuar
+                  </Button>
+                </div>
+              </motion.div>
+            )}
 
-          <div className="space-y-1.5 pt-2">
-            <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Vincular a uma Meta/Reserva (Opcional)</label>
-            <select 
-              value={goalId} 
-              onChange={e => setGoalId(e.target.value)}
-              className="flex h-12 w-full rounded-md border border-border-default bg-surface-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action-primary text-text-primary"
-            >
-              <option value="none" className="bg-surface-elevated text-text-primary">Nenhuma</option>
-              {goals.map(g => (
-                <option key={g.id} value={g.id} className="bg-surface-elevated text-text-primary">{g.title}</option>
-              ))}
-            </select>
-          </div>
+            {step === 2 && (
+              <motion.div 
+                key="step2" 
+                initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+                className="space-y-5"
+              >
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Título</label>
+                  <Input required value={title} onChange={e => setTitle(e.target.value)} placeholder="Ex: Mercado, Salário..." className="h-12 bg-surface-card border-border-default focus-visible:ring-action-primary" autoFocus />
+                </div>
 
-          {goalId !== 'none' && (
-            <label className="flex items-center justify-between p-4 rounded-xl border border-border-default bg-surface-elevated cursor-pointer hover:border-border-focus transition-colors mt-2">
-              <span className="text-sm font-medium text-text-primary">Isolar do Saldo (Não contabilizar no total)</span>
-              <div className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${ignoreBalance ? 'bg-action-primary' : 'bg-surface-base border border-border-default'}`}>
-                <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform shadow-sm ${ignoreBalance ? 'translate-x-5' : 'translate-x-0'}`} />
-              </div>
-              <input type="checkbox" checked={ignoreBalance} onChange={e => setIgnoreBalance(e.target.checked)} className="sr-only" />
-            </label>
-          )}
+                <div className="flex gap-4">
+                  <div className="space-y-1.5 flex-[1.5]">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Categoria</label>
+                    <select 
+                      value={category} 
+                      onChange={e => setCategory(e.target.value)}
+                      className="flex h-12 w-full rounded-md border border-border-default bg-surface-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action-primary text-text-primary"
+                    >
+                      <option className="bg-surface-elevated text-text-primary">Alimentação</option>
+                      <option className="bg-surface-elevated text-text-primary">Moradia</option>
+                      <option className="bg-surface-elevated text-text-primary">Transporte</option>
+                      <option className="bg-surface-elevated text-text-primary">Saúde</option>
+                      <option className="bg-surface-elevated text-text-primary">Lazer</option>
+                      <option className="bg-surface-elevated text-text-primary">Salário</option>
+                      <option className="bg-surface-elevated text-text-primary">Outros</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5 flex-[1.2]">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Data (Opcional)</label>
+                    <Input 
+                      type="date" 
+                      value={dueDate} 
+                      onChange={e => setDueDate(e.target.value)} 
+                      className="h-12 bg-surface-card border-border-default focus-visible:ring-action-primary color-scheme-dark"
+                      title="Se não selecionar, usará a data de hoje"
+                    />
+                  </div>
+                </div>
 
-          {type === 'expense' && (
-            <label className="flex items-center justify-between p-4 rounded-xl border border-border-default bg-surface-elevated cursor-pointer hover:border-border-focus transition-colors mt-2">
-              <span className="text-sm font-medium text-text-primary">Esta despesa já está paga?</span>
-              <div className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${isPaid ? 'bg-status-success' : 'bg-surface-base border border-border-default'}`}>
-                <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform shadow-sm ${isPaid ? 'translate-x-5' : 'translate-x-0'}`} />
-              </div>
-              <input type="checkbox" checked={isPaid} onChange={e => setIsPaid(e.target.checked)} className="sr-only" />
-            </label>
-          )}
+                <div className="mt-8 pt-4 flex gap-3">
+                  <Button 
+                    type="button" 
+                    onClick={() => setStep(1)}
+                    variant="outline"
+                    className="flex-1 h-12 text-base font-semibold border-border-default hover:bg-surface-subtle transition-all rounded-xl"
+                  >
+                    Voltar
+                  </Button>
+                  <Button 
+                    type="button" 
+                    onClick={() => {
+                      if (!title.trim()) return;
+                      setStep(3);
+                    }}
+                    disabled={!title.trim()}
+                    className="flex-1 h-12 text-base font-semibold bg-action-primary hover:bg-action-primary-hover text-text-on-brand shadow-lg transition-all rounded-xl disabled:opacity-50"
+                  >
+                    Continuar
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 3 && (
+              <motion.div 
+                key="step3" 
+                initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+                className="space-y-4"
+              >
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Repetição</label>
+                  <select 
+                    value={recurrence} 
+                    onChange={e => setRecurrence(e.target.value)}
+                    className="flex h-12 w-full rounded-md border border-border-default bg-surface-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action-primary text-text-primary"
+                  >
+                    <option value="none" className="bg-surface-elevated text-text-primary">Única vez</option>
+                    <option value="weekly" className="bg-surface-elevated text-text-primary">Toda Semana</option>
+                    <option value="biweekly" className="bg-surface-elevated text-text-primary">A cada 15 dias</option>
+                    <option value="monthly" className="bg-surface-elevated text-text-primary">Mensal (Fixo/Infinito)</option>
+                    <option value="installments" className="bg-surface-elevated text-status-warning">Parcelado (Tempo dtrm.)</option>
+                  </select>
+                </div>
+
+                <AnimatePresence>
+                  {recurrence === 'installments' && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-1.5 overflow-hidden">
+                      <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Quantidade de Parcelas</label>
+                      <Input 
+                        type="number" 
+                        min="2" 
+                        max="360" 
+                        value={installmentsCount} 
+                        onChange={e => setInstallmentsCount(e.target.value)} 
+                        className="h-12 bg-surface-card border-status-warning/50 focus-visible:ring-status-warning text-text-primary"
+                        title="Insira o número de meses"
+                      />
+                      <p className="text-[10px] text-text-tertiary">Sistemas criará {installmentsCount} contas futuras automaticamente.</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Vincular a uma Meta/Reserva (Opcional)</label>
+                  <select 
+                    value={goalId} 
+                    onChange={e => setGoalId(e.target.value)}
+                    className="flex h-12 w-full rounded-md border border-border-default bg-surface-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action-primary text-text-primary"
+                  >
+                    <option value="none" className="bg-surface-elevated text-text-primary">Nenhuma</option>
+                    {goals.map(g => (
+                      <option key={g.id} value={g.id} className="bg-surface-elevated text-text-primary">{g.title}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {goalId !== 'none' && (
+                  <label className="flex items-center justify-between p-4 rounded-xl border border-border-default bg-surface-elevated cursor-pointer hover:border-border-focus transition-colors mt-2">
+                    <span className="text-sm font-medium text-text-primary">Isolar do Saldo (Não contabilizar no total)</span>
+                    <div className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${ignoreBalance ? 'bg-action-primary' : 'bg-surface-base border border-border-default'}`}>
+                      <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform shadow-sm ${ignoreBalance ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </div>
+                    <input type="checkbox" checked={ignoreBalance} onChange={e => setIgnoreBalance(e.target.checked)} className="sr-only" />
+                  </label>
+                )}
+
+                {type === 'expense' && (
+                  <label className="flex items-center justify-between p-4 rounded-xl border border-border-default bg-surface-elevated cursor-pointer hover:border-border-focus transition-colors mt-2">
+                    <span className="text-sm font-medium text-text-primary">Esta despesa já está paga?</span>
+                    <div className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${isPaid ? 'bg-status-success' : 'bg-surface-base border border-border-default'}`}>
+                      <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform shadow-sm ${isPaid ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </div>
+                    <input type="checkbox" checked={isPaid} onChange={e => setIsPaid(e.target.checked)} className="sr-only" />
+                  </label>
+                )}
+
+                <div className="mt-8 pt-4 flex gap-3">
+                  <Button 
+                    type="button" 
+                    onClick={() => setStep(2)}
+                    variant="outline"
+                    className="flex-1 h-12 text-base font-semibold border-border-default hover:bg-surface-subtle transition-all rounded-xl"
+                  >
+                    Voltar
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    className="flex-[2] h-12 text-base font-semibold bg-action-primary hover:bg-action-primary-hover text-text-on-brand shadow-lg transition-all rounded-xl"
+                  >
+                    {type === 'income' ? 'Registrar Receita' : 'Registrar Despesa'}
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-
-        <Button type="submit" className="w-full h-12 text-base font-semibold mt-8 bg-action-primary hover:bg-action-primary-hover text-text-on-brand shadow-lg hover:shadow-action-primary/25 transition-all rounded-xl">
-          {type === 'income' ? 'Registrar Receita' : 'Registrar Despesa'}
-        </Button>
       </form>
     </Modal>
   )
