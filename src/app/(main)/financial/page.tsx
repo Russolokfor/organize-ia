@@ -9,8 +9,9 @@ import { RecentEntries } from '@/components/financial/RecentEntries'
 import { BillsDue } from '@/components/financial/BillsDue'
 import { BudgetsProgress } from '@/components/financial/BudgetsProgress'
 import { GoalsProgress } from '@/components/financial/GoalsProgress'
-import { TransactionModal, BudgetModal, GoalModal } from '@/components/financial/FinancialForms'
+import { GoalModal, BudgetModal, TransactionModal } from '@/components/financial/FinancialForms'
 import { StatementUploadModal } from '@/components/financial/StatementUploadModal'
+import { PayablesView } from '@/components/financial/PayablesView'
 import { Button } from '@/components/ui/button'
 import { Plus, Wand2 } from 'lucide-react'
 
@@ -20,6 +21,7 @@ export default function FinancialPage() {
   const [isBudgetModalOpen, setBudgetModalOpen] = React.useState(false)
   const [isGoalModalOpen, setGoalModalOpen] = React.useState(false)
   const [isStatementModalOpen, setStatementModalOpen] = React.useState(false)
+  const [activeTab, setActiveTab] = React.useState<'overview' | 'payables'>('overview')
 
   if (loading) {
     return <div className="p-8 animate-pulse">Carregando dados financeiros...</div>
@@ -63,35 +65,64 @@ export default function FinancialPage() {
         </div>
       </div>
 
-      <FinancialSummaryCards />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <FinancialCharts />
-          <RecentEntries />
-        </div>
-        <div className="space-y-6">
-          <BillsDue />
-          
-          <div className="space-y-2">
-            <div className="flex justify-end pr-1">
-              <button className="text-xs font-semibold text-action-primary hover:text-action-primary-hover flex items-center gap-1" onClick={() => setBudgetModalOpen(true)}>
-                <Plus className="w-3 h-3"/> Novo Orçamento
-              </button>
-            </div>
-            <BudgetsProgress />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex justify-end pr-1">
-              <button className="text-xs font-semibold text-action-primary hover:text-action-primary-hover flex items-center gap-1" onClick={() => setGoalModalOpen(true)}>
-                <Plus className="w-3 h-3"/> Nova Meta
-              </button>
-            </div>
-            <GoalsProgress />
-          </div>
-        </div>
+      <div className="flex w-full md:w-auto p-1 bg-surface-base rounded-xl mb-6 border border-border-default/50 max-w-fit">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`flex-1 px-6 py-2.5 text-sm font-semibold rounded-lg transition-all ${activeTab === 'overview' ? 'bg-surface-card text-text-primary shadow-sm border border-border-default' : 'text-text-secondary hover:text-text-primary'}`}
+        >
+          Visão Geral
+        </button>
+        <button
+          onClick={() => setActiveTab('payables')}
+          className={`flex-1 px-6 py-2.5 text-sm font-semibold rounded-lg transition-all ${activeTab === 'payables' ? 'bg-surface-card text-text-primary shadow-sm border border-border-default' : 'text-text-secondary hover:text-text-primary'}`}
+        >
+          Contas a Pagar
+        </button>
       </div>
+
+      {activeTab === 'overview' ? (
+        <motion.div 
+          key="overview"
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+        >
+          <FinancialSummaryCards />
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+            <div className="lg:col-span-2 space-y-6">
+              <FinancialCharts />
+              <RecentEntries />
+            </div>
+            <div className="space-y-6">
+              <BillsDue />
+              
+              <div className="space-y-2">
+                <div className="flex justify-end pr-1">
+                  <button className="text-xs font-semibold text-action-primary hover:text-action-primary-hover flex items-center gap-1" onClick={() => setBudgetModalOpen(true)}>
+                    <Plus className="w-3 h-3"/> Novo Orçamento
+                  </button>
+                </div>
+                <BudgetsProgress />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-end pr-1">
+                  <button className="text-xs font-semibold text-action-primary hover:text-action-primary-hover flex items-center gap-1" onClick={() => setGoalModalOpen(true)}>
+                    <Plus className="w-3 h-3"/> Nova Meta
+                  </button>
+                </div>
+                <GoalsProgress />
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      ) : (
+        <motion.div 
+          key="payables"
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+        >
+          <PayablesView />
+        </motion.div>
+      )}
 
       <TransactionModal isOpen={isTransactionModalOpen} onClose={() => setTransactionModalOpen(false)} />
       <BudgetModal isOpen={isBudgetModalOpen} onClose={() => setBudgetModalOpen(false)} />
