@@ -7,13 +7,64 @@ import { CrmProvider, useCrm } from '@/components/crm/CrmProvider'
 import { ClientType, Client } from '@/types/crm'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { format, parseISO, isPast } from 'date-fns'
+import { format, parseISO, isPast, differenceInDays, addMonths, addYears } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 import { ClientModal } from '@/components/crm/ClientModal'
 
+function PaymentCountdown({ client, onPaymentAction }: { client: Client, onPaymentAction: (client: Client, paid: boolean) => void }) {
+  if (!client.next_payment_date) return null;
+  
+  const nextDate = parseISO(client.next_payment_date);
+  const today = new Date();
+  
+  // Strip time for accurate day difference
+  const nextDay = new Date(nextDate.getFullYear(), nextDate.getMonth(), nextDate.getDate());
+  const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  
+  const diff = differenceInDays(nextDay, todayDay);
+  
+  let msg = '';
+  let color = 'text-text-secondary';
+  let showAction = false;
+  
+  if (diff > 0) {
+    if (diff <= 7) {
+      msg = `Vence em ${diff} dia${diff === 1 ? '' : 's'}`;
+      color = 'text-text-primary font-medium';
+    } else {
+      msg = `Vence em ${diff} dias`;
+    }
+  } else if (diff === 0) {
+    msg = 'Vence Hoje!';
+    color = 'text-status-warning font-bold';
+    showAction = true;
+  } else {
+    msg = `Vencido há ${Math.abs(diff)} dia${Math.abs(diff) === 1 ? '' : 's'}`;
+    color = 'text-status-error font-bold';
+    showAction = true;
+  }
+
+  return (
+    <div className="mt-4 pt-3 border-t border-border-subtle" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center">
+        <span className={`text-xs ${color}`}>{msg}</span>
+      </div>
+      {showAction && (
+        <div className="mt-3 bg-surface-elevated rounded-xl p-3 border border-border-default">
+          <p className="text-xs text-text-primary font-medium mb-3">O pagamento foi realizado?</p>
+          <div className="flex gap-2">
+            <Button size="sm" className="flex-1 bg-status-success hover:bg-status-success/90 text-white h-8 text-xs" onClick={() => onPaymentAction(client, true)}>Sim, foi pago</Button>
+            <Button size="sm" variant="outline" className="flex-1 border-status-error text-status-error hover:bg-status-error/10 h-8 text-xs" onClick={() => onPaymentAction(client, false)}>Ainda não</Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function CrmDashboard() {
-  const { clients, loading } = useCrm()
+  const { clients, loading, updateClient } = useCrm()
   const [viewMode, setViewMode] = React.useState<ClientType>('individual')
   const [searchQuery, setSearchQuery] = React.useState('')
   const [isModalOpen, setIsModalOpen] = React.useState(false)
@@ -62,6 +113,31 @@ function CrmDashboard() {
     totalActive: clients.filter(c => c.status === 'active').length,
     totalLate: clients.filter(c => c.status === 'late' || c.status === 'defaulting').length,
     monthlyRevenue: clients.filter(c => c.status === 'active' && c.billing_cycle === 'monthly').reduce((acc, c) => acc + (c.service_value || 0), 0)
+  }
+
+  const handlePaymentAction = async (client: Client, paid: boolean) => {
+    if (paid) {
+      let newDateStr = client.next_payment_date;
+      if (client.next_payment_date) {
+        const currentNext = parseISO(client.next_payment_date);
+        let updatedDate = currentNext;
+        if (client.billing_cycle === 'monthly') {
+          updatedDate = addMonths(currentNext, 1);
+        } else if (client.billing_cycle === 'yearly') {
+          updatedDate = addYears(currentNext, 1);
+        }
+        newDateStr = format(updatedDate, 'yyyy-MM-dd');
+      }
+
+      await updateClient(client.id, {
+        status: 'active',
+        next_payment_date: newDateStr
+      });
+    } else {
+      await updateClient(client.id, {
+        status: 'defaulting'
+      });
+    }
   }
 
   return (
@@ -202,6 +278,8 @@ function CrmDashboard() {
                        </p>
                      </div>
                    </div>
+
+                   <PaymentCountdown client={client} onPaymentAction={handlePaymentAction} />
 
                 </CardContent>
               </Card>
