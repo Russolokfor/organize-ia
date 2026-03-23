@@ -120,36 +120,48 @@ export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Nova Transação">
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="flex gap-2 p-1.5 bg-surface-elevated rounded-xl border border-border-default/50">
+      <form onSubmit={handleSubmit} className="flex flex-col">
+        <div className="flex p-1 bg-surface-elevated rounded-xl border border-border-default/50 mb-6">
           <button 
             type="button"
             onClick={() => setType('expense')}
-            className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${type === 'expense' ? 'bg-status-error/10 text-status-error shadow-sm border border-status-error/20' : 'text-text-secondary hover:text-text-primary'}`}
+            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${type === 'expense' ? 'bg-status-error text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
           >
-            🔽 Despesa
+            Despesa
           </button>
           <button 
             type="button"
             onClick={() => setType('income')}
-            className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all ${type === 'income' ? 'bg-status-success/10 text-status-success shadow-sm border border-status-success/20' : 'text-text-secondary hover:text-text-primary'}`}
+            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${type === 'income' ? 'bg-status-success text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
           >
-            🔼 Receita
+            Receita
           </button>
         </div>
 
-        <div className="space-y-4 pt-2">
+        <div className="flex flex-col items-center justify-center py-8 mb-6 rounded-2xl bg-surface-base/50 border border-border-default/30">
+          <span className="text-xs font-semibold uppercase tracking-wider text-text-tertiary mb-2">Valor da {type === 'income' ? 'Receita' : 'Despesa'}</span>
+          <div className="flex items-center justify-center">
+            <span className="text-3xl font-medium text-text-tertiary mr-2">R$</span>
+            <input
+              required
+              type="number"
+              step="0.01"
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+              className="text-5xl font-bold bg-transparent border-none focus:ring-0 text-center w-48 text-text-primary placeholder:text-surface-border p-0 m-0"
+              placeholder="0.00"
+              autoFocus
+            />
+          </div>
+        </div>
+
+        <div className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Título</label>
             <Input required value={title} onChange={e => setTitle(e.target.value)} placeholder="Ex: Mercado, Salário..." className="h-12 bg-surface-card border-border-default focus-visible:ring-action-primary" />
           </div>
 
           <div className="flex gap-4">
-            <div className="space-y-1.5 flex-1">
-              <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Valor (R$)</label>
-              <Input required type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" className="h-12 bg-surface-card border-border-default focus-visible:ring-action-primary text-lg font-medium" />
-            </div>
-            
             <div className="space-y-1.5 flex-[1.5]">
               <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Categoria</label>
               <select 
@@ -166,10 +178,7 @@ export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose
                 <option className="bg-surface-elevated text-text-primary">Outros</option>
               </select>
             </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="space-y-1.5 flex-1">
+            <div className="space-y-1.5 flex-[1.2]">
               <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Data (Opcional)</label>
               <Input 
                 type="date" 
@@ -179,20 +188,21 @@ export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose
                 title="Se não selecionar, usará a data de hoje"
               />
             </div>
-            <div className="space-y-1.5 flex-[1.2]">
-              <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Repetição</label>
-              <select 
-                value={recurrence} 
-                onChange={e => setRecurrence(e.target.value)}
-                className="flex h-12 w-full rounded-md border border-border-default bg-surface-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action-primary text-text-primary"
-              >
-                <option value="none" className="bg-surface-elevated text-text-primary">Única vez</option>
-                <option value="weekly" className="bg-surface-elevated text-text-primary">Toda Semana</option>
-                <option value="biweekly" className="bg-surface-elevated text-text-primary">A cada 15 dias</option>
-                <option value="monthly" className="bg-surface-elevated text-text-primary">Mensal (Fixo/Infinito)</option>
-                <option value="installments" className="bg-surface-elevated text-status-warning">Parcelado (Tempo dtrm.)</option>
-              </select>
-            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Repetição</label>
+            <select 
+              value={recurrence} 
+              onChange={e => setRecurrence(e.target.value)}
+              className="flex h-12 w-full rounded-md border border-border-default bg-surface-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action-primary text-text-primary"
+            >
+              <option value="none" className="bg-surface-elevated text-text-primary">Única vez</option>
+              <option value="weekly" className="bg-surface-elevated text-text-primary">Toda Semana</option>
+              <option value="biweekly" className="bg-surface-elevated text-text-primary">A cada 15 dias</option>
+              <option value="monthly" className="bg-surface-elevated text-text-primary">Mensal (Fixo/Infinito)</option>
+              <option value="installments" className="bg-surface-elevated text-status-warning">Parcelado (Tempo dtrm.)</option>
+            </select>
           </div>
 
           {recurrence === 'installments' && (
@@ -207,18 +217,18 @@ export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose
                 className="h-12 bg-surface-card border-status-warning/50 focus-visible:ring-status-warning text-text-primary"
                 title="Insira o número de meses"
               />
-              <p className="text-[10px] text-text-tertiary">O sistema vai criar automaticamente as parcelas nos meses seguintes.</p>
+              <p className="text-[10px] text-text-tertiary">Sistemas criará {installmentsCount} contas futuras automaticamente.</p>
             </div>
           )}
 
           <div className="space-y-1.5 pt-2">
-            <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Vincular a uma Meta / Reserva?</label>
+            <label className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Vincular a uma Meta/Reserva (Opcional)</label>
             <select 
               value={goalId} 
               onChange={e => setGoalId(e.target.value)}
               className="flex h-12 w-full rounded-md border border-border-default bg-surface-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action-primary text-text-primary"
             >
-              <option value="none" className="bg-surface-elevated text-text-primary">Não vincular</option>
+              <option value="none" className="bg-surface-elevated text-text-primary">Nenhuma</option>
               {goals.map(g => (
                 <option key={g.id} value={g.id} className="bg-surface-elevated text-text-primary">{g.title}</option>
               ))}
@@ -226,45 +236,27 @@ export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose
           </div>
 
           {goalId !== 'none' && (
-            <div className="pt-2">
-              <label className="flex items-center gap-3 text-sm font-medium cursor-pointer text-text-primary bg-surface-elevated p-3 rounded-xl border border-border-default/50 hover:border-border-default transition-colors">
-                <div className="relative flex items-center justify-center w-5 h-5">
-                  <input 
-                    type="checkbox" 
-                    checked={ignoreBalance} 
-                    onChange={e => setIgnoreBalance(e.target.checked)} 
-                    className="appearance-none peer w-5 h-5 border-2 border-border-focus rounded cursor-pointer checked:bg-action-primary checked:border-action-primary transition-all" 
-                  />
-                  <svg className="absolute w-3 h-3 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M1 5L5 9L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-                Isolar valor (Não contabilizar no saldo do mês)
-              </label>
-            </div>
+            <label className="flex items-center justify-between p-4 rounded-xl border border-border-default bg-surface-elevated cursor-pointer hover:border-border-focus transition-colors mt-2">
+              <span className="text-sm font-medium text-text-primary">Isolar do Saldo (Não contabilizar no total)</span>
+              <div className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${ignoreBalance ? 'bg-action-primary' : 'bg-surface-base border border-border-default'}`}>
+                <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform shadow-sm ${ignoreBalance ? 'translate-x-5' : 'translate-x-0'}`} />
+              </div>
+              <input type="checkbox" checked={ignoreBalance} onChange={e => setIgnoreBalance(e.target.checked)} className="sr-only" />
+            </label>
           )}
 
           {type === 'expense' && (
-            <div className="pt-2">
-              <label className="flex items-center gap-3 text-sm font-medium cursor-pointer text-text-primary bg-surface-elevated p-3 rounded-xl border border-border-default/50 hover:border-border-default transition-colors">
-                <div className="relative flex items-center justify-center w-5 h-5">
-                  <input 
-                    type="checkbox" 
-                    checked={isPaid} 
-                    onChange={e => setIsPaid(e.target.checked)} 
-                    className="appearance-none peer w-5 h-5 border-2 border-border-focus rounded cursor-pointer checked:bg-status-success checked:border-status-success transition-all" 
-                  />
-                  <svg className="absolute w-3 h-3 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M1 5L5 9L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-                Esta despesa já está paga
-              </label>
-            </div>
+            <label className="flex items-center justify-between p-4 rounded-xl border border-border-default bg-surface-elevated cursor-pointer hover:border-border-focus transition-colors mt-2">
+              <span className="text-sm font-medium text-text-primary">Esta despesa já está paga?</span>
+              <div className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${isPaid ? 'bg-status-success' : 'bg-surface-base border border-border-default'}`}>
+                <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform shadow-sm ${isPaid ? 'translate-x-5' : 'translate-x-0'}`} />
+              </div>
+              <input type="checkbox" checked={isPaid} onChange={e => setIsPaid(e.target.checked)} className="sr-only" />
+            </label>
           )}
         </div>
 
-        <Button type="submit" className="w-full h-12 text-base font-semibold mt-4 bg-action-primary hover:bg-action-primary-hover text-text-on-brand shadow-lg hover:shadow-action-primary/25 transition-all">
+        <Button type="submit" className="w-full h-12 text-base font-semibold mt-8 bg-action-primary hover:bg-action-primary-hover text-text-on-brand shadow-lg hover:shadow-action-primary/25 transition-all rounded-xl">
           {type === 'income' ? 'Registrar Receita' : 'Registrar Despesa'}
         </Button>
       </form>
