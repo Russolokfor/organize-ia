@@ -8,9 +8,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { format, parseISO, isPast, differenceInDays, isValid } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { FinancialEntry } from '@/types'
-import { financialEntryService } from '@/services/financialEntryService'
+import { useFinancial } from '@/components/financial/FinancialProvider'
+import { Edit2 } from 'lucide-react'
 
-export function PayablesView({ onAddClick }: { onAddClick?: () => void }) {
+export function PayablesView({ onAddClick, onEditClick }: { onAddClick?: (type?: 'expense' | 'income', hideSelector?: boolean) => void, onEditClick?: (entry: FinancialEntry) => void }) {
+  const { referenceMonth, refresh } = useFinancial()
   const [entries, setEntries] = React.useState<FinancialEntry[]>([])
   const [loading, setLoading] = React.useState(true)
   const [viewMode, setViewMode] = React.useState<'pending' | 'paid' | 'overdue'>('pending')
@@ -64,6 +66,7 @@ export function PayablesView({ onAddClick }: { onAddClick?: () => void }) {
       if (error) throw error
       
       setEntries(prev => prev.map(e => e.id === id ? { ...e, ...payload } : e))
+      await refresh()
     } catch(e) {
       console.error(e)
     }
@@ -76,6 +79,7 @@ export function PayablesView({ onAddClick }: { onAddClick?: () => void }) {
       const supabase = createClient()
       await supabase.from('financial_entries').delete().eq('id', id)
       setEntries(prev => prev.filter(e => e.id !== id))
+      await refresh()
     } catch(e) {
       console.error(e)
     }
@@ -99,7 +103,13 @@ export function PayablesView({ onAddClick }: { onAddClick?: () => void }) {
     })
   }, [entries])
 
-  const filteredEntries = processedEntries.filter(entry => {
+  const entriesInScope = processedEntries.filter(entry => {
+    if (!entry.due_date) return false
+    const d = parseISO(entry.due_date)
+    return isValid(d) && format(d, 'yyyy-MM') === referenceMonth
+  })
+
+  const filteredEntries = entriesInScope.filter(entry => {
     const matchesView = entry.status === viewMode
     const matchesSearch = entry.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          (entry.category && entry.category.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -109,20 +119,16 @@ export function PayablesView({ onAddClick }: { onAddClick?: () => void }) {
   })
 
   // Group by category for pills
-  const categories = Array.from(new Set(processedEntries.filter(e => e.status === viewMode).map(e => e.category || 'Outros')))
+  const categories = Array.from(new Set(entriesInScope.filter(e => e.status === viewMode).map(e => e.category || 'Outros')))
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
   }
 
-  // KPIs
-  const totalPending = processedEntries.filter(e => e.status === 'pending').reduce((acc, e) => acc + Number(e.amount), 0)
-  const totalOverdue = processedEntries.filter(e => e.status === 'overdue').reduce((acc, e) => acc + Number(e.amount), 0)
-  const totalThisMonth = processedEntries.filter(e => {
-    if (!e.due_date) return false;
-    const d = parseISO(e.due_date);
-    return isValid(d) && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  }).reduce((acc, e) => acc + Number(e.amount), 0)
+  // KPIs limitados ao escopo do mês selecionado
+  const totalThisMonth = entriesInScope.reduce((acc, e) => acc + Number(e.amount), 0)
+  const totalPending = entriesInScope.filter(e => e.status === 'pending').reduce((acc, e) => acc + Number(e.amount), 0)
+  const totalOverdue = entriesInScope.filter(e => e.status === 'overdue').reduce((acc, e) => acc + Number(e.amount), 0)
 
   return (
     <div className="space-y-6 mt-4">
@@ -200,7 +206,7 @@ export function PayablesView({ onAddClick }: { onAddClick?: () => void }) {
             />
           </div>
           {onAddClick && (
-            <Button onClick={onAddClick} className="bg-action-primary hover:bg-action-primary-hover text-text-on-brand rounded-xl h-10 px-4 whitespace-nowrap hidden md:flex">
+            <Button onClick={() => onAddClick('expense', true)} className="bg-action-primary hover:bg-action-primary-hover text-text-on-brand rounded-xl h-10 px-4 whitespace-nowrap hidden md:flex">
               <Plus className="w-4 h-4 mr-2" /> Nova Conta
             </Button>
           )}
@@ -264,6 +270,15 @@ export function PayablesView({ onAddClick }: { onAddClick?: () => void }) {
                             {entry.status === 'paid' ? 'Pago' : entry.status === 'overdue' ? 'Em Atraso' : 'Pendente'}
                          </span>
                          <div className="flex items-center gap-1 transition-opacity pt-1">
+                           {onEditClick && (
+                             <button 
+                               onClick={() => onEditClick(entry)}
+                               className="p-1.5 text-text-secondary hover:text-action-primary hover:bg-action-primary/10 rounded-lg transition-colors border border-transparent hover:border-action-primary/20"
+                               title="Editar Conta"
+                             >
+                               <Edit2 className="w-4 h-4" />
+                             </button>
+                           )}
                            <button 
                              onClick={() => handleDelete(entry.id)}
                              className="p-1.5 text-text-secondary hover:text-status-error hover:bg-status-error/10 rounded-lg transition-colors border border-transparent hover:border-status-error/20"

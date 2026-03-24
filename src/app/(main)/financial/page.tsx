@@ -9,6 +9,7 @@ import { RecentEntries } from '@/components/financial/RecentEntries'
 import { BillsDue } from '@/components/financial/BillsDue'
 import { BudgetsProgress } from '@/components/financial/BudgetsProgress'
 import { GoalsProgress } from '@/components/financial/GoalsProgress'
+import { FinancialEntry } from '@/types'
 import { GoalModal, BudgetModal, TransactionModal } from '@/components/financial/FinancialForms'
 import { StatementUploadModal } from '@/components/financial/StatementUploadModal'
 import { PayablesView } from '@/components/financial/PayablesView'
@@ -16,8 +17,12 @@ import { Button } from '@/components/ui/button'
 import { Plus, Wand2 } from 'lucide-react'
 
 export default function FinancialPage() {
-  const { loading, referenceMonth, setReferenceMonth } = useFinancial()
+  const { loading, referenceMonth, setReferenceMonth, refresh } = useFinancial()
   const [isTransactionModalOpen, setTransactionModalOpen] = React.useState(false)
+  const [transactionModalType, setTransactionModalType] = React.useState<'expense' | 'income'>('expense')
+  const [hideTransactionSelector, setHideTransactionSelector] = React.useState(false)
+  const [editingEntry, setEditingEntry] = React.useState<FinancialEntry | null>(null)
+
   const [isBudgetModalOpen, setBudgetModalOpen] = React.useState(false)
   const [isGoalModalOpen, setGoalModalOpen] = React.useState(false)
   const [isStatementModalOpen, setStatementModalOpen] = React.useState(false)
@@ -59,7 +64,12 @@ export default function FinancialPage() {
           <Button variant="outline" className="rounded-xl shadow-sm border-action-primary/20 hover:bg-surface-subtle hidden md:flex" onClick={() => setStatementModalOpen(true)}>
             <Wand2 className="w-4 h-4 mr-2 text-action-primary" /> Importar Extrato
           </Button>
-          <Button className="rounded-xl shadow-md bg-action-primary text-text-on-brand hover:bg-action-primary-hover" onClick={() => setTransactionModalOpen(true)}>
+          <Button className="rounded-xl shadow-md bg-action-primary text-text-on-brand hover:bg-action-primary-hover" onClick={() => {
+            setTransactionModalType('expense')
+            setHideTransactionSelector(false)
+            setEditingEntry(null)
+            setTransactionModalOpen(true)
+          }}>
             <Plus className="w-4 h-4 mr-2" /> Nova Transação
           </Button>
         </div>
@@ -120,10 +130,36 @@ export default function FinancialPage() {
           key="payables"
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
         >
-          <PayablesView onAddClick={() => setTransactionModalOpen(true)} />
+          <PayablesView 
+            onAddClick={(type = 'expense', hideSelector = true) => {
+              setTransactionModalType(type)
+              setHideTransactionSelector(hideSelector)
+              setEditingEntry(null)
+              setTransactionModalOpen(true)
+            }}
+            onEditClick={(entry) => {
+              setEditingEntry(entry)
+              setTransactionModalType(entry.type)
+              setHideTransactionSelector(true) // lock type during edit
+              setTransactionModalOpen(true)
+            }}
+          />
         </motion.div>
       )}
-      <TransactionModal isOpen={isTransactionModalOpen} onClose={() => setTransactionModalOpen(false)} />
+      <TransactionModal 
+        isOpen={isTransactionModalOpen} 
+        onClose={() => {
+          setTransactionModalOpen(false)
+          setTimeout(() => {
+            setEditingEntry(null)
+            setHideTransactionSelector(false)
+          }, 300)
+        }} 
+        defaultType={transactionModalType}
+        hideTypeSelector={hideTransactionSelector}
+        editEntry={editingEntry}
+        onRefresh={refresh}
+      />
       <BudgetModal isOpen={isBudgetModalOpen} onClose={() => setBudgetModalOpen(false)} />
       <GoalModal isOpen={isGoalModalOpen} onClose={() => setGoalModalOpen(false)} />
       <StatementUploadModal isOpen={isStatementModalOpen} onClose={() => setStatementModalOpen(false)} />

@@ -46,9 +46,25 @@ function Modal({ isOpen, onClose, title, children }: { isOpen: boolean, onClose:
   )
 }
 
-export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
-  const { addEntry, referenceMonth, goals, addFundsToGoal } = useFinancial()
-  const [type, setType] = React.useState<'income' | 'expense'>('expense')
+interface TransactionModalProps {
+  isOpen: boolean
+  onClose: () => void
+  defaultType?: 'income' | 'expense'
+  hideTypeSelector?: boolean
+  editEntry?: any | null
+  onRefresh?: () => void
+}
+
+export function TransactionModal({ 
+  isOpen, 
+  onClose,
+  defaultType = 'expense',
+  hideTypeSelector = false,
+  editEntry = null,
+  onRefresh
+}: TransactionModalProps) {
+  const { addEntry, updateEntry, referenceMonth, goals, addFundsToGoal } = useFinancial()
+  const [type, setType] = React.useState<'income' | 'expense'>(defaultType)
   const [title, setTitle] = React.useState('')
   const [amount, setAmount] = React.useState('')
   const [category, setCategory] = React.useState('Alimentação')
@@ -61,17 +77,33 @@ export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose
   const [ignoreBalance, setIgnoreBalance] = React.useState(false)
 
   React.useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
       setStep(1)
-      setTitle('')
-      setAmount('')
-      setDueDate('')
-      setRecurrence('none')
-      setInstallmentsCount('2')
-      setGoalId('none')
-      setIgnoreBalance(false)
+      if (editEntry) {
+        setTitle(editEntry.title || '')
+        setAmount(Math.abs(editEntry.amount).toString() || '')
+        setType(editEntry.type || defaultType)
+        setCategory(editEntry.category || 'Outros')
+        setDueDate(editEntry.due_date ? editEntry.due_date.split('T')[0] : '')
+        setIsPaid(editEntry.is_paid || false)
+        setRecurrence(editEntry.is_recurring ? (editEntry.recurrence_type || 'monthly') : 'none')
+        setInstallmentsCount('2')
+        setGoalId(editEntry.goal_id || 'none')
+        setIgnoreBalance(editEntry.ignore_from_balance || false)
+      } else {
+        setTitle('')
+        setAmount('')
+        setType(defaultType)
+        setCategory('Alimentação')
+        setDueDate('')
+        setRecurrence('none')
+        setInstallmentsCount('2')
+        setGoalId('none')
+        setIgnoreBalance(false)
+        setIsPaid(defaultType === 'income')
+      }
     }
-  }, [isOpen])
+  }, [isOpen, editEntry, defaultType])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -83,40 +115,64 @@ export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose
     const parsedAmount = parseFloat(amount)
     const iterations = isInstallments ? parseInt(installmentsCount, 10) : 1
     const baseDate = parseISO(finalDate)
-    
+
     try {
-      for (let i = 0; i < iterations; i++) {
-        const currentDate = addMonths(baseDate, i)
-        const dateString = format(currentDate, 'yyyy-MM-dd')
-        const refMonth = format(currentDate, 'yyyy-MM')
-        
-        await addEntry({
-          title: isInstallments ? `${title} (${i + 1}/${iterations})` : title,
-          amount: parsedAmount, // Note: Este é o valor de "Cada Parcela" inserido pelo próprio usuário
+      if (editEntry) {
+        // Edit mode (single entry update)
+        await updateEntry(editEntry.id, {
+          title,
+          amount: parsedAmount,
           type,
           category,
-          is_paid: type === 'income' ? true : (i === 0 ? isPaid : false), // Apenas a primeira parcela herda o status 'paga' inicial num parcelamento de despesa futura
-          paid_at: (type === 'income' || (i === 0 && isPaid)) ? new Date().toISOString() : null,
-          due_date: dateString,
-          notes: null,
+          is_paid: type === 'income' ? true : isPaid,
+          paid_at: (type === 'income' || isPaid) ? (editEntry.paid_at || new Date().toISOString()) : null,
+          due_date: finalDate,
           is_recurring: isRecurring,
           recurrence_type: isRecurring ? recurrence : null,
           is_fixed: isRecurring,
-          reference_month: isInstallments ? refMonth : referenceMonth, // O valor singular avança pro mês atual se for só "referenceMonth", mas parcelamentos andam nos calendários. Mas wait, 'referenceMonth' do modal ou da data original? Avançamos a data. Para o primeiro usamos `referenceMonth` do view/hoje ou o mes do form. Vamos usar refMonth gerado localmente.
           goal_id: goalId !== 'none' ? goalId : null,
           ignore_from_balance: goalId !== 'none' ? ignoreBalance : false
         })
+      } else {
+        // Add mode (potentially generating installments)
+        for (let i = 0; i < iterations; i++) {
+          const currentDate = addMonths(baseDate, i)
+          const dateString = format(currentDate, 'yyyy-MM-dd')
+          const refMonth = format(currentDate, 'yyyy-MM')
+          
+          await addEntry({
+            title: isInstallments ? `${title} (${i + 1}/${iterations})` : title,
+            amount: parsedAmount,
+            type,
+            category,
+            is_paid: type === 'income' ? true : (i === 0 ? isPaid : false),
+            paid_at: (type === 'income' || (i === 0 && isPaid)) ? new Date().toISOString() : null,
+            due_date: dateString,
+            notes: null,
+            is_recurring: isRecurring,
+            recurrence_type: isRecurring ? recurrence : null,
+            is_fixed: isRecurring,
+            reference_month: isInstallments ? refMonth : referenceMonth,
+            goal_id: goalId !== 'none' ? goalId : null,
+            ignore_from_balance: goalId !== 'none' ? ignoreBalance : false
+          })
+        }
+
+        if (goalId !== 'none') {
+          const modifier = type === 'income' ? (parsedAmount * iterations) : -(parsedAmount * iterations);
+          await addFundsToGoal(goalId, modifier);
+        }
       }
 
-      if (goalId !== 'none') {
-        const modifier = type === 'income' ? (parsedAmount * iterations) : -(parsedAmount * iterations);
-        await addFundsToGoal(goalId, modifier);
+      // Propagate refresh if provided
+      if (typeof onRefresh === 'function') {
+        onRefresh()
       }
 
       onClose()
     } catch(err) {
       console.error(err)
-      alert("Erro ao adicionar transação")
+      alert("Erro ao salvar transação")
     }
   }
 
@@ -151,24 +207,26 @@ export function TransactionModal({ isOpen, onClose }: { isOpen: boolean, onClose
                 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
                 className="flex flex-col h-full"
               >
-                <div className="flex p-1 bg-surface-elevated rounded-xl border border-border-default/50 mb-6">
-                  <button 
-                    type="button"
-                    onClick={() => setType('expense')}
-                    className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${type === 'expense' ? 'bg-status-error text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
-                  >
-                    Despesa
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => setType('income')}
-                    className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${type === 'income' ? 'bg-status-success text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
-                  >
-                    Receita
-                  </button>
-                </div>
+                {!hideTypeSelector && (
+                  <div className="flex p-1 bg-surface-elevated rounded-xl border border-border-default/50 mb-6">
+                    <button 
+                      type="button"
+                      onClick={() => setType('expense')}
+                      className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${type === 'expense' ? 'bg-status-error text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                    >
+                      Despesa
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setType('income')}
+                      className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${type === 'income' ? 'bg-status-success text-white shadow-md' : 'text-text-secondary hover:text-text-primary'}`}
+                    >
+                      Receita
+                    </button>
+                  </div>
+                )}
 
-                <div className="flex flex-col items-center justify-center py-10 mb-6 rounded-2xl bg-surface-base/50 border border-border-default/30">
+                <div className={`flex flex-col items-center justify-center py-10 mb-6 rounded-2xl bg-surface-base/50 border border-border-default/30 ${hideTypeSelector ? 'mt-4' : ''}`}>
                   <span className="text-xs font-semibold uppercase tracking-wider text-text-tertiary mb-3">Valor da {type === 'income' ? 'Receita' : 'Despesa'}</span>
                   <div className="flex items-center justify-center">
                     <span className="text-3xl font-medium text-text-tertiary mr-2">R$</span>
