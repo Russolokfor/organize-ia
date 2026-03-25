@@ -49,14 +49,34 @@ interface FinancialContextType {
 
 const FinancialContext = React.createContext<FinancialContextType | undefined>(undefined)
 
-export function FinancialProvider({ children }: { children: React.ReactNode }) {
-  const [entries, setEntries] = React.useState<FinancialEntry[]>([])
-  const [budgets, setBudgets] = React.useState<FinancialBudget[]>([])
-  const [goals, setGoals] = React.useState<FinancialGoal[]>([])
-  const [loading, setLoading] = React.useState(true)
+interface FinancialProviderProps {
+  children: React.ReactNode
+  initialData?: {
+    entries: FinancialEntry[]
+    budgets: FinancialBudget[]
+    goals: FinancialGoal[]
+  }
+}
+
+export function FinancialProvider({ children, initialData }: FinancialProviderProps) {
+  const [entries, setEntries] = React.useState<FinancialEntry[]>(initialData?.entries || [])
+  const [budgets, setBudgets] = React.useState<FinancialBudget[]>(initialData?.budgets || [])
+  const [goals, setGoals] = React.useState<FinancialGoal[]>(initialData?.goals || [])
+  
+  // Se veio com os dados iniciais, loading entra como falso
+  const [loading, setLoading] = React.useState(!initialData)
   const [referenceMonth, setReferenceMonth] = React.useState(format(new Date(), 'yyyy-MM'))
+  
+  // Usado para evitar fetch na primeira montagem caso os dados já tenham vindo do Server
+  const hydrated = React.useRef(!!initialData)
 
   const refresh = React.useCallback(async () => {
+    // Se acabamos de receber initialData no SSR, não busca na primeira vez
+    if (hydrated.current) {
+      hydrated.current = false
+      return
+    }
+
     try {
       setLoading(true)
       const [fetchedEntries, fetchedBudgets, fetchedGoals] = await Promise.all([
