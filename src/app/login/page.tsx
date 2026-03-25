@@ -6,7 +6,8 @@ import { motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { LogIn, UserPlus, Github } from 'lucide-react'
+import { LogIn, UserPlus } from 'lucide-react'
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -49,21 +50,30 @@ export default function LoginPage() {
     }
   }
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    if (!credentialResponse.credential) {
+      setError('Falha ao receber o token do Google.')
+      return
+    }
+
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      setLoading(true)
+      const { error } = await supabase.auth.signInWithIdToken({
         provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
+        token: credentialResponse.credential,
       })
+      
       if (error) throw error
+      
+      router.push('/dashboard')
     } catch (error: any) {
-      setError(error.message || 'Erro ao logar com Google')
+      setError(error.message || 'Erro ao processar login com Google no servidor')
+      setLoading(false)
     }
   }
 
   return (
+    <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ''}>
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-background">
       {/* Background Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
@@ -146,20 +156,19 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <Button
-          type="button"
-          variant="secondary"
-          className="w-full"
-          onClick={handleGoogleLogin}
-        >
-          <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
-            <path
-              fill="currentColor"
-              d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
-            />
-          </svg>
-          Continuar com Google
-        </Button>
+        <div className="flex justify-center w-full">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => {
+              setError('O login com Google falhou ou foi cancelado.')
+            }}
+            useOneTap
+            shape="rectangular"
+            theme="filled_black"
+            text="continue_with"
+            size="large"
+          />
+        </div>
 
         <p className="mt-8 text-center text-xs text-muted-foreground">
           {isLogin ? "Não tem uma conta? " : "Já tem uma conta? "}
@@ -173,5 +182,6 @@ export default function LoginPage() {
         </p>
       </motion.div>
     </div>
+    </GoogleOAuthProvider>
   )
 }
