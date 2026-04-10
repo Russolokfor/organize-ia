@@ -1,5 +1,19 @@
 export type TaskStatus = 'planned' | 'doing' | 'done'
 
+export interface Subtask {
+  id: string
+  task_id: string
+  user_id: string
+  title: string
+  is_done: boolean
+  due_date: string | null
+  due_time: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type SubtaskInsert = Omit<Subtask, 'id' | 'user_id' | 'created_at' | 'updated_at'>
+
 export interface Task {
   id: string
   user_id: string
@@ -16,6 +30,7 @@ export interface Task {
   board_id: string | null
   created_at: string
   updated_at: string
+  subtasks?: Subtask[]
 }
 
 export type TaskInsert = Omit<Task, 'id' | 'user_id' | 'created_at' | 'updated_at'>

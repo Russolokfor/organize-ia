@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js'
-import { Task, TaskInsert, TaskUpdate, TaskFilters } from '@/types'
+import { Task, TaskInsert, TaskUpdate, TaskFilters, Subtask } from '@/types'
 import { isToday, isPast, parseISO, addDays } from 'date-fns'
 
 export class TaskService {
@@ -15,7 +15,7 @@ export class TaskService {
     const userId = await this.getUserId()
     let query = this.supabase
       .from('tasks')
-      .select('*')
+      .select('*, subtasks(*)')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
 
@@ -180,5 +180,50 @@ export class TaskService {
 
     if (insertErr) throw insertErr
     return data as Task[]
+  }
+
+  // --- Subtasks ---
+
+  async addSubtask(subtaskId: string, taskId: string, title: string): Promise<any> {
+    const userId = await this.getUserId()
+    const { data, error } = await this.supabase
+      .from('subtasks')
+      .insert({
+        id: subtaskId,
+        task_id: taskId,
+        user_id: userId,
+        title,
+        is_done: false
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  }
+
+  async updateSubtask(subtaskId: string, updates: Partial<any>): Promise<any> {
+    const userId = await this.getUserId()
+    const { data, error } = await this.supabase
+      .from('subtasks')
+      .update(updates)
+      .eq('id', subtaskId)
+      .eq('user_id', userId)
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  }
+
+  async deleteSubtask(subtaskId: string): Promise<void> {
+    const userId = await this.getUserId()
+    const { error } = await this.supabase
+      .from('subtasks')
+      .delete()
+      .eq('id', subtaskId)
+      .eq('user_id', userId)
+
+    if (error) throw error
   }
 }

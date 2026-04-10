@@ -10,7 +10,7 @@ interface TaskContextType {
   tasks: Task[]
   loading: boolean
   error: string | null
-  refresh: (filters?: TaskFilters) => Promise<void>
+  refresh: () => Promise<void>
   addTask: (payload: any) => Promise<void>
   updateTask: (id: string, patch: any) => Promise<void>
   deleteTask: (id: string) => Promise<void>
@@ -21,6 +21,10 @@ interface TaskContextType {
   getPerformanceMetrics: (days: 7 | 30) => PerformanceMetrics
   deleteTasks: (ids: string[]) => Promise<void>
   duplicateTasks: (ids: string[]) => Promise<void>
+  // Subtasks
+  addSubtask: (taskId: string, title: string) => Promise<void>
+  updateSubtask: (taskId: string, subtaskId: string, patch: any) => Promise<void>
+  deleteSubtask: (taskId: string, subtaskId: string) => Promise<void>
 }
 
 const TaskContext = React.createContext<TaskContextType | undefined>(undefined)
@@ -32,10 +36,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
   const taskService = new TaskService(supabase)
 
-  const refresh = React.useCallback(async (filters?: TaskFilters) => {
+  const refresh = React.useCallback(async () => {
     try {
       setLoading(true)
-      const data = await taskService.list(filters)
+      const data = await taskService.list()
       setTasks(data)
       setError(null)
     } catch (err: any) {
@@ -131,6 +135,64 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // --- Subtasks ---
+  const addSubtask = async (taskId: string, title: string) => {
+    const tempId = 'temp-' + Date.now()
+    try {
+      // Optimistic up
+      setTasks(prev => prev.map(t => {
+        if (t.id === taskId) {
+          const st = t.subtasks || []
+          return { ...t, subtasks: [...st, { id: tempId, task_id: taskId, title, is_done: false, user_id: '', due_date: null, due_time: null, created_at: '', updated_at: '' }] }
+        }
+        return t
+      }))
+      const created = await taskService.addSubtask(tempId.replace('temp-', ''), taskId, title)
+      // replace temp
+      setTasks(prev => prev.map(t => {
+        if (t.id === taskId) {
+          return { ...t, subtasks: (t.subtasks || []).map(s => s.id === tempId ? created : s) }
+        }
+        return t
+      }))
+    } catch (err: any) {
+      setError(err.message)
+      refresh()
+    }
+  }
+
+  const updateSubtask = async (taskId: string, subtaskId: string, patch: any) => {
+    try {
+      // Optimistic
+      setTasks(prev => prev.map(t => {
+        if (t.id === taskId) {
+          return { ...t, subtasks: (t.subtasks || []).map(s => s.id === subtaskId ? { ...s, ...patch } : s) }
+        }
+        return t
+      }))
+      await taskService.updateSubtask(subtaskId, patch)
+    } catch (err: any) {
+      setError(err.message)
+      refresh()
+    }
+  }
+
+  const deleteSubtask = async (taskId: string, subtaskId: string) => {
+    try {
+      // Optimistic
+      setTasks(prev => prev.map(t => {
+        if (t.id === taskId) {
+          return { ...t, subtasks: (t.subtasks || []).filter(s => s.id !== subtaskId) }
+        }
+        return t
+      }))
+      await taskService.deleteSubtask(subtaskId)
+    } catch (err: any) {
+      setError(err.message)
+      refresh()
+    }
+  }
+
   // Metrics Calculations (Frontend as requested)
   const dashboardMetrics = React.useMemo(() => {
     const todayDate = new Date()
@@ -205,7 +267,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
   const contextValue = React.useMemo(() => ({
     tasks, loading, error, refresh, addTask, updateTask, deleteTask, toggleTaskDone, pinTaskToday,
-    dashboardMetrics, routineMetrics, getPerformanceMetrics, deleteTasks, duplicateTasks
+    dashboardMetrics, routineMetrics, getPerformanceMetrics, deleteTasks, duplicateTasks,
+    addSubtask, updateSubtask, deleteSubtask
   }), [tasks, loading, error, refresh, dashboardMetrics, routineMetrics, getPerformanceMetrics])
 
   return (

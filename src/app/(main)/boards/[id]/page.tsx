@@ -36,8 +36,9 @@ export default function BoardDetailPage() {
 
   useEffect(() => {
     loadBoard()
-    refresh({ board_id: boardId }) // Load tasks specific to this board
-  }, [boardId, refresh])
+  }, [boardId])
+
+  const boardTasks = tasks.filter(t => t.board_id === boardId)
 
   const loadBoard = async () => {
     try {
@@ -175,17 +176,17 @@ export default function BoardDetailPage() {
       {/* Task List */}
       <div className="space-y-3">
         <h3 className="text-xl font-semibold text-text-primary mb-4 flex items-center gap-2">
-          Tarefas do Quadro <span className="bg-white/10 text-sm px-2 py-0.5 rounded-full">{tasks.length}</span>
+          Tarefas do Quadro <span className="bg-white/10 text-sm px-2 py-0.5 rounded-full">{boardTasks.length}</span>
         </h3>
         
         {tasksLoading ? (
           <div className="text-center py-10 text-text-secondary animate-pulse">Carregando tarefas...</div>
-        ) : tasks.length === 0 ? (
+        ) : boardTasks.length === 0 ? (
           <div className="text-center py-16 bg-surface/50 border border-border-default border-dashed rounded-2xl">
             <p className="text-text-secondary font-medium">Nenhuma tarefa neste quadro ainda.</p>
           </div>
         ) : (
-          tasks.map(task => (
+          boardTasks.map(task => (
             <TaskItem 
               key={task.id} 
               task={task} 

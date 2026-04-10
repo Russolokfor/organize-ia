@@ -8,7 +8,7 @@ import { TaskItem } from '@/components/tasks/TaskItem'
 import { Button } from '@/components/ui/button'
 import { Calendar, Clock, Plus, Target, CheckSquare, Trash2, Copy, AlarmClock, FolderKanban } from 'lucide-react'
 import { TaskFilterScope, TaskFilterStatus, TaskBoard } from '@/types'
-import { format, addDays } from 'date-fns'
+import { format, addDays, isToday, isPast, parseISO } from 'date-fns'
 import { boardService } from '@/services/boardService'
 
 export default function OrganizationPage() {
@@ -67,9 +67,21 @@ export default function OrganizationPage() {
   }
 
   React.useEffect(() => {
-    refresh({ status: statusFilter, scope: scopeFilter })
     boardService.fetchBoards().then(setBoards).catch(console.error)
-  }, [statusFilter, scopeFilter, refresh])
+  }, [])
+
+  const filteredTasks = React.useMemo(() => {
+    return tasks.filter(t => {
+      if (statusFilter !== 'all' && t.status !== statusFilter) return false;
+      
+      if (scopeFilter === 'today') return t.pinned_today || (t.due_date && isToday(parseISO(t.due_date)));
+      if (scopeFilter === 'next7') return t.due_date && parseISO(t.due_date) <= addDays(new Date(), 7) && !isPast(parseISO(t.due_date)) && !isToday(parseISO(t.due_date));
+      if (scopeFilter === 'overdue') return t.due_date && isPast(parseISO(t.due_date)) && !isToday(parseISO(t.due_date));
+      if (scopeFilter === 'no_due_date') return !t.due_date;
+      
+      return true;
+    })
+  }, [tasks, statusFilter, scopeFilter])
 
   const toggleSelection = (id: string) => {
     const next = new Set(selectedTaskIds)
@@ -267,7 +279,7 @@ export default function OrganizationPage() {
       </Card>
 
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-8">
-        <h2 className="font-semibold px-1 text-text-primary">Todas as Tarefas ({tasks.length})</h2>
+        <h2 className="font-semibold px-1 text-text-primary">Todas as Tarefas ({filteredTasks.length})</h2>
         <div className="flex items-center gap-2 self-start md:self-auto w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
           <select 
             value={statusFilter}
@@ -307,11 +319,11 @@ export default function OrganizationPage() {
       </div>
 
       <motion.div layout className="flex flex-col gap-2">
-        {loading && tasks.length === 0 ? (
+        {loading && filteredTasks.length === 0 ? (
           <div className="animate-pulse space-y-3">
             {[1,2,3].map(i => <div key={i} className="h-16 bg-surface-subtle rounded-2xl w-full"></div>)}
           </div>
-        ) : tasks.length === 0 ? (
+        ) : filteredTasks.length === 0 ? (
           <div className="p-12 text-center rounded-3xl border border-dashed border-border-default bg-surface-section">
             <div className="w-16 h-16 mx-auto bg-surface-subtle rounded-2xl flex items-center justify-center mb-4 text-text-secondary">
               <span className="text-2xl">🌱</span>
@@ -322,7 +334,7 @@ export default function OrganizationPage() {
             </p>
           </div>
         ) : (
-          tasks.map(task => (
+          filteredTasks.map(task => (
             <TaskItem 
               key={task.id} 
               task={task} 
