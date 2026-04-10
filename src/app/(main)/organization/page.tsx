@@ -6,9 +6,10 @@ import { useTasks } from '@/components/tasks/TaskProvider'
 import { Card, CardContent } from '@/components/ui/card'
 import { TaskItem } from '@/components/tasks/TaskItem'
 import { Button } from '@/components/ui/button'
-import { Calendar, Clock, Plus, Target, CheckSquare, Trash2, Copy, AlarmClock } from 'lucide-react'
-import { TaskFilterScope, TaskFilterStatus } from '@/types'
+import { Calendar, Clock, Plus, Target, CheckSquare, Trash2, Copy, AlarmClock, FolderKanban } from 'lucide-react'
+import { TaskFilterScope, TaskFilterStatus, TaskBoard } from '@/types'
 import { format, addDays } from 'date-fns'
+import { boardService } from '@/services/boardService'
 
 export default function OrganizationPage() {
   const { tasks, addTask, refresh, loading, deleteTasks, duplicateTasks } = useTasks()
@@ -21,6 +22,9 @@ export default function OrganizationPage() {
   
   const [statusFilter, setStatusFilter] = React.useState<TaskFilterStatus>('all')
   const [scopeFilter, setScopeFilter] = React.useState<TaskFilterScope>('all')
+
+  const [boards, setBoards] = React.useState<TaskBoard[]>([])
+  const [selectedBoard, setSelectedBoard] = React.useState<string>('')
 
   const [isSelectMode, setIsSelectMode] = React.useState(false)
   const [selectedTaskIds, setSelectedTaskIds] = React.useState<Set<string>>(new Set())
@@ -43,6 +47,7 @@ export default function OrganizationPage() {
     try {
       await addTask({
         title,
+        board_id: selectedBoard || null,
         due_date: dueDate || null,
         due_time: dueTime || null,
         duration_min: parseInt(duration) || 30,
@@ -54,6 +59,7 @@ export default function OrganizationPage() {
       setDateMode('none')
       setDuration('30')
       setPriority('3')
+      setSelectedBoard('')
     } catch (err: any) {
       console.error(err)
       alert(`Erro ao criar tarefa: ${err.message}`)
@@ -62,6 +68,7 @@ export default function OrganizationPage() {
 
   React.useEffect(() => {
     refresh({ status: statusFilter, scope: scopeFilter })
+    boardService.fetchBoards().then(setBoards).catch(console.error)
   }, [statusFilter, scopeFilter, refresh])
 
   const toggleSelection = (id: string) => {
@@ -236,6 +243,25 @@ export default function OrganizationPage() {
                 </select>
               </div>
             </div>
+            
+            {/* Options Row 2: Board */}
+            {boards.length > 0 && (
+              <div className="flex px-1">
+                <div className="flex items-center gap-2 bg-surface-card backdrop-blur px-3 py-1.5 border border-border-default rounded-lg shadow-sm">
+                  <FolderKanban className="w-4 h-4 text-text-secondary" />
+                  <select 
+                    value={selectedBoard} 
+                    onChange={e => setSelectedBoard(e.target.value)}
+                    className="bg-transparent text-sm focus:outline-none text-text-primary appearance-none cursor-pointer"
+                  >
+                    <option value="" className="bg-surface-elevated text-text-primary">Nenhum Quadro (Caixa de Entrada)</option>
+                    {boards.map(b => (
+                      <option key={b.id} value={b.id} className="bg-surface-elevated text-text-primary">{b.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
           </form>
         </CardContent>
       </Card>

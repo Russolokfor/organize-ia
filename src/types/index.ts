@@ -13,6 +13,7 @@ export interface Task {
   completed_at: string | null // ISO Timestamp
   pinned_today: boolean
   routine_order: number | null
+  board_id: string | null
   created_at: string
   updated_at: string
 }
@@ -26,6 +27,7 @@ export type TaskFilterScope = 'all' | 'today' | 'next7' | 'overdue' | 'no_due_da
 export interface TaskFilters {
   status?: TaskFilterStatus
   scope?: TaskFilterScope
+  board_id?: string | null
 }
 
 export interface DashboardMetrics {
@@ -59,4 +61,21 @@ export interface AIParseResponse {
     energy: 'high' | 'medium' | 'low'
   }[]
 }
+
+// ==========================================
+// TASKS BOARD TYPES
+// ==========================================
+
+export interface TaskBoard {
+  id: string
+  user_id: string
+  name: string
+  description: string | null
+  is_archived: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type TaskBoardInsert = Omit<TaskBoard, 'id' | 'user_id' | 'created_at' | 'updated_at'>
+export type TaskBoardUpdate = Partial<TaskBoardInsert>
 

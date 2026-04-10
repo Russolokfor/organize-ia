@@ -23,6 +23,14 @@ export class TaskService {
       query = query.eq('status', filters.status)
     }
 
+    if (filters?.board_id !== undefined) {
+      if (filters.board_id === null) {
+        query = query.is('board_id', null)
+      } else {
+        query = query.eq('board_id', filters.board_id)
+      }
+    }
+
     const { data, error } = await query
     if (error) throw error
 

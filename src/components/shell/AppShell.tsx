@@ -17,7 +17,8 @@ import {
   Wallet,
   Settings,
   Users,
-  Receipt
+  Receipt,
+  FolderKanban
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -34,6 +35,7 @@ const navCategories = [
     items: [
       { name: 'Organização', href: '/organization', icon: ListTodo },
       { name: 'Rotina', href: '/routine', icon: CalendarClock },
+      { name: 'Quadros', href: '/boards', icon: FolderKanban },
       { name: 'Clientes', href: '/crm', icon: Users },
     ]
   },
