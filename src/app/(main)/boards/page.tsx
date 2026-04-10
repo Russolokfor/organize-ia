@@ -33,12 +33,16 @@ export default function BoardsPage() {
 
   const loadBoards = async () => {
     try {
-      const data = await boardService.fetchBoards()
-      setBoards(data)
-
       const supabase = createClient()
       const taskService = new TaskService(supabase)
-      const tasks = await taskService.list()
+      
+      const [data, tasks] = await Promise.all([
+        boardService.fetchBoards(),
+        taskService.list()
+      ])
+
+      setBoards(data)
+
       const activeTasks = tasks.filter(t => t.status !== 'done')
       
       const counts: Record<string, number> = {}
