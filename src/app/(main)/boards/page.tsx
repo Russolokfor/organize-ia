@@ -6,6 +6,8 @@ import { Plus, FolderKanban, MoreVertical, Archive, Trash2, Edit2, Search } from
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { boardService } from '@/services/boardService'
+import { TaskService } from '@/services/taskService'
+import { createClient } from '@/lib/supabase'
 import { TaskBoard } from '@/types'
 import { useRouter } from 'next/navigation'
 import * as Dialog from '@radix-ui/react-dialog'
@@ -16,6 +18,7 @@ export default function BoardsPage() {
   const [boards, setBoards] = useState<TaskBoard[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [taskCounts, setTaskCounts] = useState<Record<string, number>>({})
 
   // Create/Edit Modal State
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -32,6 +35,21 @@ export default function BoardsPage() {
     try {
       const data = await boardService.fetchBoards()
       setBoards(data)
+
+      const supabase = createClient()
+      const taskService = new TaskService(supabase)
+      const tasks = await taskService.list()
+      const activeTasks = tasks.filter(t => t.status !== 'done')
+      
+      const counts: Record<string, number> = {}
+      data.forEach(b => counts[b.id] = 0)
+      activeTasks.forEach(t => {
+        if (t.board_id && counts[t.board_id] !== undefined) {
+          counts[t.board_id]++
+        }
+      })
+      setTaskCounts(counts)
+
     } catch (error) {
       console.error('Failed to load boards', error)
     } finally {
@@ -149,13 +167,25 @@ export default function BoardsPage() {
                       <FolderKanban className="w-6 h-6" />
                     </div>
                     
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <button className="p-2 -mr-2 text-text-secondary hover:text-text-primary rounded-lg hover:bg-white/5">
-                          <MoreVertical className="w-5 h-5" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48 bg-surface border-white/10 text-white rounded-xl shadow-2xl p-2 z-50">
+                    <div className="flex items-center gap-2">
+                      {!board.is_archived && (
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${
+                          (taskCounts[board.id] || 0) === 0 ? 'bg-surface-elevated text-text-secondary border border-border-default' :
+                          (taskCounts[board.id] || 0) <= 2  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                          (taskCounts[board.id] || 0) <= 5  ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
+                          'bg-red-500/20 text-red-400 border border-red-500/30'
+                        }`}>
+                          {taskCounts[board.id] || 0}
+                        </div>
+                      )}
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <button className="p-2 -mr-2 text-text-secondary hover:text-text-primary rounded-lg hover:bg-white/5">
+                            <MoreVertical className="w-5 h-5" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48 bg-surface border-white/10 text-white rounded-xl shadow-2xl p-2 z-50">
                         <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditModal(board) }} className="hover:bg-white/10 cursor-pointer rounded-lg p-2 flex items-center gap-2">
                           <Edit2 className="w-4 h-4" /> Editar Detalhes
                         </DropdownMenuItem>
@@ -166,7 +196,8 @@ export default function BoardsPage() {
                           <Trash2 className="w-4 h-4" /> Excluir
                         </DropdownMenuItem>
                       </DropdownMenuContent>
-                    </DropdownMenu>
+                      </DropdownMenu>
+                    </div>
                   </div>
                   
                   <h3 className="text-lg font-bold text-text-primary mb-2 line-clamp-1 group-hover:text-primary transition-colors">
