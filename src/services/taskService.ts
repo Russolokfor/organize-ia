@@ -184,12 +184,11 @@ export class TaskService {
 
   // --- Subtasks ---
 
-  async addSubtask(subtaskId: string, taskId: string, title: string): Promise<any> {
+  async addSubtask(taskId: string, title: string): Promise<any> {
     const userId = await this.getUserId()
     const { data, error } = await this.supabase
       .from('subtasks')
       .insert({
-        id: subtaskId,
         task_id: taskId,
         user_id: userId,
         title,

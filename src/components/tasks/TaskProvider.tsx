@@ -147,7 +147,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         }
         return t
       }))
-      const created = await taskService.addSubtask(tempId.replace('temp-', ''), taskId, title)
+      const created = await taskService.addSubtask(taskId, title)
       // replace temp
       setTasks(prev => prev.map(t => {
         if (t.id === taskId) {
