@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Task, DashboardMetrics, RoutineMetrics, PerformanceMetrics, TaskFilters } from '@/types'
+import { Task, Subtask, DashboardMetrics, RoutineMetrics, PerformanceMetrics, TaskFilters } from '@/types'
 import { TaskService } from '@/services/taskService'
 import { createClient } from '@/lib/supabase'
 import { isToday, isPast, parseISO, subDays } from 'date-fns'
@@ -21,10 +21,13 @@ interface TaskContextType {
   getPerformanceMetrics: (days: 7 | 30) => PerformanceMetrics
   deleteTasks: (ids: string[]) => Promise<void>
   duplicateTasks: (ids: string[]) => Promise<void>
-  // Subtasks
   addSubtask: (taskId: string, title: string) => Promise<void>
   updateSubtask: (taskId: string, subtaskId: string, patch: any) => Promise<void>
   deleteSubtask: (taskId: string, subtaskId: string) => Promise<void>
+  
+  // Reordering
+  reorderTasksFrontend: (newOrder: Task[]) => void
+  reorderSubtasksFrontend: (taskId: string, newOrder: Subtask[]) => void
 }
 
 const TaskContext = React.createContext<TaskContextType | undefined>(undefined)
@@ -40,7 +43,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true)
       const data = await taskService.list()
-      setTasks(data)
+      const sortedData = data.map(t => ({
+        ...t,
+        subtasks: t.subtasks ? [...t.subtasks].sort((a, b) => (a.order_index || 0) - (b.order_index || 0)) : []
+      }))
+      setTasks(sortedData)
       setError(null)
     } catch (err: any) {
       setError(err.message)
@@ -143,7 +150,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       setTasks(prev => prev.map(t => {
         if (t.id === taskId) {
           const st = t.subtasks || []
-          return { ...t, subtasks: [...st, { id: tempId, task_id: taskId, title, is_done: false, user_id: '', due_date: null, due_time: null, created_at: '', updated_at: '' }] }
+          return { ...t, subtasks: [...st, { id: tempId, task_id: taskId, title, is_done: false, user_id: '', order_index: st.length, due_date: null, due_time: null, created_at: '', updated_at: '' }] }
         }
         return t
       }))
@@ -189,6 +196,47 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       await taskService.deleteSubtask(subtaskId)
     } catch (err: any) {
       setError(err.message)
+      refresh()
+    }
+  }
+
+  // --- Reordering DND ---
+  const reorderTasksFrontend = async (newOrder: Task[]) => {
+    // Assign sequence numbers based on their new visual order
+    const updates = newOrder.map((t, idx) => ({ id: t.id, routine_order: idx }))
+
+    // Apply to global state optimistic
+    setTasks(prev => prev.map(t => {
+      const u = updates.find(x => x.id === t.id)
+      return u ? { ...t, routine_order: u.routine_order } : t
+    }))
+
+    try {
+      await taskService.reorderTasks(updates)
+    } catch (err) {
+      console.error('Reorder tasks error:', err)
+      refresh() // rollback
+    }
+  }
+
+  const reorderSubtasksFrontend = async (taskId: string, newOrder: Subtask[]) => {
+    const updates = newOrder.map((s, idx) => ({ id: s.id, order_index: idx }))
+
+    // Optimistic
+    setTasks(prev => prev.map(t => {
+      if (t.id === taskId) {
+        return {
+          ...t,
+          subtasks: newOrder.map((s, idx) => ({ ...s, order_index: idx }))
+        }
+      }
+      return t
+    }))
+
+    try {
+      await taskService.reorderSubtasks(updates)
+    } catch (err) {
+      console.error('Reorder subtasks error:', err)
       refresh()
     }
   }
@@ -268,7 +316,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const contextValue = React.useMemo(() => ({
     tasks, loading, error, refresh, addTask, updateTask, deleteTask, toggleTaskDone, pinTaskToday,
     dashboardMetrics, routineMetrics, getPerformanceMetrics, deleteTasks, duplicateTasks,
-    addSubtask, updateSubtask, deleteSubtask
+    addSubtask, updateSubtask, deleteSubtask, reorderTasksFrontend, reorderSubtasksFrontend
   }), [tasks, loading, error, refresh, dashboardMetrics, routineMetrics, getPerformanceMetrics])
 
   return (

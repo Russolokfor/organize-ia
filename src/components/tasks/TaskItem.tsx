@@ -1,6 +1,6 @@
 import * as React from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Task } from '@/types'
+import { motion, AnimatePresence, Reorder, useDragControls, DragControls } from 'framer-motion'
+import { Task, Subtask } from '@/types'
 import { useTasks } from './TaskProvider'
 import { Check, Clock, GripVertical, MoreVertical, Pin, Trash2, Calendar, AlarmClock, ChevronDown, ChevronRight, CornerDownRight, ListTree } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -14,10 +14,11 @@ interface TaskItemProps {
   isSelectMode?: boolean
   isSelected?: boolean
   onToggleSelect?: (id: string) => void
+  dragControls?: DragControls
 }
 
-export function TaskItem({ task, showDragHandle, isSelectMode, isSelected, onToggleSelect }: TaskItemProps) {
-  const { toggleTaskDone, pinTaskToday, deleteTask, addSubtask, updateSubtask, deleteSubtask } = useTasks()
+export function TaskItem({ task, showDragHandle, isSelectMode, isSelected, onToggleSelect, dragControls }: TaskItemProps) {
+  const { toggleTaskDone, pinTaskToday, deleteTask, addSubtask, updateSubtask, deleteSubtask, reorderSubtasksFrontend } = useTasks()
   const [showOptions, setShowOptions] = React.useState(false)
   const [isEditModalOpen, setEditModalOpen] = React.useState(false)
   const [isExpanded, setIsExpanded] = React.useState(false)
@@ -31,6 +32,18 @@ export function TaskItem({ task, showDragHandle, isSelectMode, isSelected, onTog
     }
   }
 
+  const handleReorderSub = (newOrder: Subtask[]) => {
+    // Determine which item moved where based on ID sequence differences if we want,
+    // but the easy frontend way is to just call a special `reorderSubtasksExact` that takes the full array of IDs,
+    // OR we can just use `updateSubtask` loop, OR the provider handles it.
+    // Provider `reorderSubtasksFrontend` has `(taskId, activeId, overId)`.
+    // Let's actually fire an updates map locally, then save.
+    // However, to keep it simple and perfectly synced, let's call `reorderSubtasksFrontend` with a dedicated new mode in the next step,
+    // actually, let's just use `taskService.reorderSubtasks()`. 
+    // Wait, the provider doesn't have a `setSubtasksList` method yet. We can just use standard `updateSubtask` in a loop, but that would trigger 5 calls.
+    // We already made `taskService.reorderSubtasks`. We can just call it and locally mutate the state!
+  }
+
   return (
     <motion.div
       layout
@@ -41,9 +54,12 @@ export function TaskItem({ task, showDragHandle, isSelectMode, isSelected, onTog
       className={`group flex flex-col p-4 bg-card/40 border ${isSelected ? 'border-primary bg-primary/5' : 'border-border/50'} rounded-2xl hover:bg-muted/20 transition-all ${isDone && !isSelectMode ? 'opacity-50' : ''} ${isSelectMode ? 'cursor-pointer' : ''}`}
     >
       <div className="flex items-start md:items-center gap-3 w-full relative">
-        {showDragHandle && !isSelectMode && (
-          <button className="cursor-grab text-muted-foreground hover:text-foreground mt-1 md:mt-0">
-            <GripVertical className="w-5 h-5" />
+        {showDragHandle && !isSelectMode && !isDone && (
+          <button 
+            className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground mt-1 md:mt-0 p-1 -ml-1 rounded transition-colors hover:bg-muted/50 touch-none"
+            onPointerDown={(e) => dragControls?.start(e)}
+          >
+            <GripVertical className="w-4 h-4" />
           </button>
         )}
 
@@ -187,57 +203,16 @@ export function TaskItem({ task, showDragHandle, isSelectMode, isSelected, onTog
               className="overflow-hidden w-full"
             >
               <div className="pt-3 pb-1 pl-[2.2rem] md:pl-[2.7rem] space-y-2">
-                {task.subtasks?.map(sub => (
-                  <div key={sub.id} className="group/sub relative flex flex-wrap items-center gap-2 pl-2 border-l-2 border-border-default hover:border-primary/50 transition-colors" onClick={e => e.stopPropagation()}>
-                    {/* Checkbox */}
-                    <button 
-                      onClick={() => updateSubtask(task.id, sub.id, { is_done: !sub.is_done })} 
-                      className={`w-4 h-4 rounded-sm border flex items-center justify-center flex-shrink-0 transition-colors bg-surface-elevated ${sub.is_done ? 'bg-primary border-primary' : 'border-border-default hover:border-primary'}`}
-                    >
-                      {sub.is_done && <Check className="w-3 h-3 text-white" />}
-                    </button>
-                    
-                    {/* Title input */}
-                    <input 
-                      value={sub.title} 
-                      onChange={e => updateSubtask(task.id, sub.id, { title: e.target.value })}
-                      className={`flex-1 min-w-[120px] bg-transparent text-sm border-none focus:ring-0 p-0 transition-colors ${sub.is_done ? 'line-through text-text-secondary/50' : 'text-text-primary'}`}
-                    />
-                    
-                    {/* Compact Date/Time Controls */}
-                    <div className="flex items-center gap-2 opacity-100 md:opacity-0 group-hover/sub:opacity-100 transition-opacity ml-auto shrink-0">
-                      <div className="flex items-center gap-1 bg-surface-elevated px-1.5 py-0.5 rounded-md border border-border-default">
-                        <Calendar className="w-3 h-3 text-text-secondary" />
-                        <input 
-                          type="date" 
-                          className="text-[10px] bg-transparent border-none text-text-secondary focus:text-text-primary w-[85px] p-0 focus:ring-0" 
-                          value={sub.due_date || ''} 
-                          title="Data limite"
-                          onChange={e => updateSubtask(task.id, sub.id, { due_date: e.target.value || null })} 
-                        />
-                      </div>
-                      <div className="flex items-center gap-1 bg-surface-elevated px-1.5 py-0.5 rounded-md border border-border-default">
-                        <AlarmClock className="w-3 h-3 text-text-secondary" />
-                        <input 
-                          type="time" 
-                          className="text-[10px] bg-transparent border-none text-text-secondary focus:text-text-primary w-[55px] p-0 focus:ring-0" 
-                          value={sub.due_time || ''} 
-                          title="Hora limite"
-                          onChange={e => updateSubtask(task.id, sub.id, { due_time: e.target.value || null })} 
-                        />
-                      </div>
-                      
-                      {/* Delete */}
-                      <button 
-                        onClick={() => deleteSubtask(task.id, sub.id)} 
-                        className="text-red-400 p-1 hover:bg-red-500/10 rounded-md transition-colors"
-                        title="Excluir subtarefa"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                <Reorder.Group 
+                  axis="y" 
+                  values={task.subtasks || []} 
+                  onReorder={(newOrder) => reorderSubtasksFrontend(task.id, newOrder)}
+                  className="space-y-2"
+                >
+                  {task.subtasks?.map(sub => (
+                    <SubtaskRow key={sub.id} sub={sub} task={task} />
+                  ))}
+                </Reorder.Group>
                 
                 {/* New Subtask Input Sticky */}
                 <div className="flex flex-col pt-2 mt-2 border-t border-dashed border-border-default/50" onClick={e => e.stopPropagation()}>
@@ -274,5 +249,72 @@ export function TaskItem({ task, showDragHandle, isSelectMode, isSelected, onTog
         onClose={() => setEditModalOpen(false)} 
       />
     </motion.div>
+  )
+}
+
+function SubtaskRow({ sub, task }: { sub: Subtask, task: Task }) {
+  const { updateSubtask, deleteSubtask } = useTasks()
+  const controls = useDragControls()
+  
+  return (
+    <Reorder.Item value={sub} dragListener={false} dragControls={controls}>
+      <div className="group/sub relative flex flex-wrap items-center gap-2 pl-1 bg-surface-card rounded-xl border border-transparent hover:border-border-default hover:bg-surface-elevated transition-colors" onClick={e => e.stopPropagation()}>
+        {/* Grip Handle */}
+        <button 
+          className="cursor-grab active:cursor-grabbing text-text-secondary/50 hover:text-text-primary p-1.5 touch-none"
+          onPointerDown={(e) => controls.start(e)}
+        >
+          <GripVertical className="w-3.5 h-3.5" />
+        </button>
+
+        {/* Checkbox */}
+        <button 
+          onClick={() => updateSubtask(task.id, sub.id, { is_done: !sub.is_done })} 
+          className={`w-4 h-4 rounded-sm border flex items-center justify-center flex-shrink-0 transition-colors bg-surface-elevated ${sub.is_done ? 'bg-primary border-primary' : 'border-border-default hover:border-primary'}`}
+        >
+          {sub.is_done && <Check className="w-3 h-3 text-white" />}
+        </button>
+        
+        {/* Title input */}
+        <input 
+          value={sub.title} 
+          onChange={e => updateSubtask(task.id, sub.id, { title: e.target.value })}
+          className={`flex-1 min-w-[120px] bg-transparent text-sm border-none focus:ring-0 p-0 transition-colors cursor-text ${sub.is_done ? 'line-through text-text-secondary/50' : 'text-text-primary'}`}
+        />
+        
+        {/* Compact Date/Time Controls */}
+        <div className="flex items-center gap-2 opacity-100 md:opacity-0 group-hover/sub:opacity-100 transition-opacity ml-auto shrink-0 pr-2 py-1.5">
+          <div className="flex items-center gap-1 bg-surface-elevated px-1.5 py-0.5 rounded-md border border-border-default">
+            <Calendar className="w-3 h-3 text-text-secondary" />
+            <input 
+              type="date" 
+              className="text-[10px] bg-transparent border-none text-text-secondary focus:text-text-primary w-[85px] p-0 focus:ring-0" 
+              value={sub.due_date || ''} 
+              title="Data limite"
+              onChange={e => updateSubtask(task.id, sub.id, { due_date: e.target.value || null })} 
+            />
+          </div>
+          <div className="flex items-center gap-1 bg-surface-elevated px-1.5 py-0.5 rounded-md border border-border-default">
+            <AlarmClock className="w-3 h-3 text-text-secondary" />
+            <input 
+              type="time" 
+              className="text-[10px] bg-transparent border-none text-text-secondary focus:text-text-primary w-[55px] p-0 focus:ring-0" 
+              value={sub.due_time || ''} 
+              title="Hora limite"
+              onChange={e => updateSubtask(task.id, sub.id, { due_time: e.target.value || null })} 
+            />
+          </div>
+          
+          {/* Delete */}
+          <button 
+            onClick={() => deleteSubtask(task.id, sub.id)} 
+            className="text-red-400 p-1 hover:bg-red-500/10 rounded-md transition-colors"
+            title="Excluir subtarefa"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    </Reorder.Item>
   )
 }

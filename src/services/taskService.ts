@@ -182,6 +182,19 @@ export class TaskService {
     return data as Task[]
   }
 
+  async reorderTasks(updates: { id: string; routine_order: number }[]): Promise<void> {
+    const userId = await this.getUserId()
+    await Promise.all(
+      updates.map((u) =>
+        this.supabase
+          .from('tasks')
+          .update({ routine_order: u.routine_order })
+          .eq('id', u.id)
+          .eq('user_id', userId)
+      )
+    )
+  }
+
   // --- Subtasks ---
 
   async addSubtask(taskId: string, title: string): Promise<any> {
@@ -224,5 +237,18 @@ export class TaskService {
       .eq('user_id', userId)
 
     if (error) throw error
+  }
+
+  async reorderSubtasks(updates: { id: string; order_index: number }[]): Promise<void> {
+    const userId = await this.getUserId()
+    await Promise.all(
+      updates.map((u) =>
+        this.supabase
+          .from('subtasks')
+          .update({ order_index: u.order_index })
+          .eq('id', u.id)
+          .eq('user_id', userId)
+      )
+    )
   }
 }

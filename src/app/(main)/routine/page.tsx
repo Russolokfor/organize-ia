@@ -12,7 +12,7 @@ import { isToday, parseISO } from 'date-fns'
 import { Task } from '@/types'
 
 export default function RoutinePage() {
-  const { tasks, routineMetrics, addTask, updateTask, refresh, loading, deleteTasks, duplicateTasks } = useTasks()
+  const { tasks, routineMetrics, addTask, updateTask, refresh, loading, deleteTasks, duplicateTasks, reorderTasksFrontend } = useTasks()
   const [quickAdd, setQuickAdd] = React.useState('')
   const [isAILoading, setIsAILoading] = React.useState(false)
   const [sortMode, setSortMode] = React.useState<'manual' | 'alpha'>('manual')
@@ -49,13 +49,7 @@ export default function RoutinePage() {
   const handleReorder = async (newOrder: Task[]) => {
     if (sortMode !== 'manual') return
     setOrderedTasks(newOrder)
-    
-    // Update backend routine_order
-    for (let i = 0; i < newOrder.length; i++) {
-      if (newOrder[i].routine_order !== i) {
-        await updateTask(newOrder[i].id, { routine_order: i })
-      }
-    }
+    reorderTasksFrontend(newOrder)
   }
 
   const handleQuickAdd = async (e: React.FormEvent) => {

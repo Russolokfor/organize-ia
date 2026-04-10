@@ -6,13 +6,14 @@ export interface Subtask {
   user_id: string
   title: string
   is_done: boolean
+  order_index: number
   due_date: string | null
   due_time: string | null
   created_at: string
   updated_at: string
 }
 
-export type SubtaskInsert = Omit<Subtask, 'id' | 'user_id' | 'created_at' | 'updated_at'>
+export type SubtaskInsert = Omit<Subtask, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'order_index'>
 
 export interface Task {
   id: string
