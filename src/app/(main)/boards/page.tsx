@@ -22,6 +22,7 @@ export default function BoardsPage() {
   const [editingBoard, setEditingBoard] = useState<TaskBoard | null>(null)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     loadBoards()
@@ -42,6 +43,7 @@ export default function BoardsPage() {
     e.preventDefault()
     if (!name.trim()) return
 
+    setIsSubmitting(true)
     try {
       if (editingBoard) {
         await boardService.updateBoard(editingBoard.id, { name, description })
@@ -50,8 +52,11 @@ export default function BoardsPage() {
       }
       setIsModalOpen(false)
       loadBoards()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Save failed', error)
+      alert('Erro ao salvar o quadro: ' + error.message)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -212,11 +217,11 @@ export default function BoardsPage() {
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-6">
-                <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)} className="text-text-secondary hover:text-white hover:bg-white/5">
+                <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)} className="text-text-secondary hover:text-white hover:bg-white/5" disabled={isSubmitting}>
                   Cancelar
                 </Button>
-                <Button type="submit" className="bg-primary hover:bg-primary-hover text-white">
-                  {editingBoard ? 'Salvar Alterações' : 'Criar Quadro'}
+                <Button type="submit" className="bg-primary hover:bg-primary-hover text-white" disabled={isSubmitting}>
+                  {isSubmitting ? 'Salvando...' : editingBoard ? 'Salvar Alterações' : 'Criar Quadro'}
                 </Button>
               </div>
             </form>
