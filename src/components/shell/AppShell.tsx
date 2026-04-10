@@ -34,7 +34,6 @@ const navCategories = [
     items: [
       { name: 'Organização', href: '/organization', icon: ListTodo },
       { name: 'Rotina', href: '/routine', icon: CalendarClock },
-      { name: 'Financeiro', href: '/financial', icon: Wallet },
       { name: 'Clientes', href: '/crm', icon: Users },
     ]
   },
