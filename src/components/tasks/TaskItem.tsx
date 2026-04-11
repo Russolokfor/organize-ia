@@ -4,6 +4,7 @@ import { Task, Subtask } from '@/types'
 import { useTasks } from './TaskProvider'
 import { Check, Clock, GripVertical, MoreVertical, Pin, Trash2, Calendar, AlarmClock, ChevronDown, ChevronRight, CornerDownRight, ListTree } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { format, parseISO } from 'date-fns'
 import { EditTaskModal } from './EditTaskModal'
 import { Pencil } from 'lucide-react'
@@ -19,7 +20,6 @@ interface TaskItemProps {
 
 export function TaskItem({ task, showDragHandle, isSelectMode, isSelected, onToggleSelect, dragControls }: TaskItemProps) {
   const { toggleTaskDone, pinTaskToday, deleteTask, addSubtask, updateSubtask, deleteSubtask, reorderSubtasksFrontend } = useTasks()
-  const [showOptions, setShowOptions] = React.useState(false)
   const [isEditModalOpen, setEditModalOpen] = React.useState(false)
   const [isExpanded, setIsExpanded] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
@@ -136,59 +136,63 @@ export function TaskItem({ task, showDragHandle, isSelectMode, isSelected, onTog
 
       {/* Options Menu Toggle */}
       {!isSelectMode && (
-        <div className="relative">
-          <button 
-            onClick={(e) => { e.stopPropagation(); setShowOptions(!showOptions); }}
-            className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <MoreVertical className="w-4 h-4" />
-          </button>
+        <div className="flex flex-col md:flex-row items-end md:items-center justify-end md:ml-auto shrink-0 gap-1 md:gap-2">
           
-          {/* Simple Popover via state */}
-          {showOptions && (
-            <div className="absolute right-0 top-10 w-40 bg-card border border-border rounded-xl shadow-2xl z-10 py-1 flex flex-col overflow-hidden">
-              <button
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button 
+                onClick={(e) => e.stopPropagation()}
+                className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg opacity-0 group-hover:opacity-100 transition-opacity outline-none"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </button>
+            </DropdownMenuTrigger>
+            
+            <DropdownMenuContent align="end" className="w-48 bg-card border-border rounded-xl shadow-2xl p-1 z-50">
+              <DropdownMenuItem 
                 onClick={(e) => {
                   e.stopPropagation()
-                  setShowOptions(false)
                   setIsExpanded(true)
                 }}
-                className="px-4 py-2 text-sm text-left hover:bg-muted/50 flex items-center gap-2"
+                className="cursor-pointer"
               >
-                <ListTree className="w-4 h-4" /> Adicionar Subtarefa
-              </button>
-              <button
+                <ListTree className="w-4 h-4 mr-2" /> Adicionar Subtarefa
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem 
                 onClick={(e) => {
                   e.stopPropagation()
                   pinTaskToday(task.id, !task.pinned_today)
-                  setShowOptions(false)
                 }}
-                className="px-4 py-2 text-sm text-left hover:bg-muted/50 flex items-center gap-2 border-t border-border/50 mt-1 pt-1"
+                className="cursor-pointer"
               >
-                <Pin className="w-4 h-4" /> {task.pinned_today ? 'Remover Foco' : 'Focar Hoje'}
-              </button>
-              <button
+                <Pin className="w-4 h-4 mr-2" /> {task.pinned_today ? 'Remover Foco' : 'Focar Hoje'}
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem 
                 onClick={(e) => {
                   e.stopPropagation()
-                  setShowOptions(false)
                   setEditModalOpen(true)
                 }}
-                className="px-4 py-2 text-sm text-left hover:bg-muted/50 flex items-center gap-2"
+                className="cursor-pointer"
               >
-                <Pencil className="w-4 h-4" /> Editar
-              </button>
-              <button
+                <Pencil className="w-4 h-4 mr-2" /> Editar
+              </DropdownMenuItem>
+              
+              <DropdownMenuSeparator />
+              
+              <DropdownMenuItem 
                 onClick={(e) => {
                   e.stopPropagation()
                   deleteTask(task.id)
-                  setShowOptions(false)
                 }}
-                className="px-4 py-2 text-sm text-left hover:bg-danger/20 text-danger flex items-center gap-2 transition-colors"
+                className="text-red-500 focus:text-red-600 focus:bg-red-500/10 cursor-pointer"
               >
-                <Trash2 className="w-4 h-4" /> Excluir
-              </button>
-            </div>
-          )}
+                <Trash2 className="w-4 h-4 mr-2" /> Excluir
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
         </div>
       )}
       </div> {/* End array row */}
@@ -243,10 +247,6 @@ export function TaskItem({ task, showDragHandle, isSelectMode, isSelected, onTog
             </motion.div>
           )}
         </AnimatePresence>
-      )}
-
-      {showOptions && (
-        <div className="fixed inset-0 z-0" onClick={() => setShowOptions(false)} />
       )}
 
       <EditTaskModal 
