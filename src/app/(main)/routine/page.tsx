@@ -14,6 +14,7 @@ import { Task } from '@/types'
 export default function RoutinePage() {
   const { tasks, routineMetrics, addTask, updateTask, refresh, loading, deleteTasks, duplicateTasks, reorderTasksFrontend } = useTasks()
   const [quickAdd, setQuickAdd] = React.useState('')
+  const [isSubmittingTask, setIsSubmittingTask] = React.useState(false)
   const [isAILoading, setIsAILoading] = React.useState(false)
   const [sortMode, setSortMode] = React.useState<'manual' | 'alpha'>('manual')
   const [isSelectMode, setIsSelectMode] = React.useState(false)
@@ -54,13 +55,18 @@ export default function RoutinePage() {
 
   const handleQuickAdd = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!quickAdd.trim()) return
-    await addTask({
-      title: quickAdd,
-      priority: 2,
-      pinned_today: true // instantly goes to routine
-    })
-    setQuickAdd('')
+    if (!quickAdd.trim() || isSubmittingTask) return
+    setIsSubmittingTask(true)
+    try {
+      await addTask({
+        title: quickAdd,
+        priority: 2,
+        pinned_today: true // instantly goes to routine
+      })
+      setQuickAdd('')
+    } finally {
+      setIsSubmittingTask(false)
+    }
   }
 
   const handleAIGenerate = async () => {
@@ -205,7 +211,7 @@ export default function RoutinePage() {
             >
               <Sparkles className={`w-5 h-5 ${isAILoading ? 'animate-spin' : ''}`} />
             </Button>
-            <Button type="submit" size="sm" className="h-10 px-4 rounded-xl shadow-sm bg-action-primary hover:bg-action-primary-hover text-text-on-brand" disabled={!quickAdd.trim() || loading || isAILoading}>
+            <Button type="submit" size="sm" className="h-10 px-4 rounded-xl shadow-sm bg-action-primary hover:bg-action-primary-hover text-text-on-brand" disabled={!quickAdd.trim() || loading || isAILoading || isSubmittingTask}>
               Adicionar
             </Button>
           </div>

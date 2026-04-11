@@ -23,6 +23,7 @@ export function TaskItem({ task, showDragHandle, isSelectMode, isSelected, onTog
   const [isEditModalOpen, setEditModalOpen] = React.useState(false)
   const [isExpanded, setIsExpanded] = React.useState(false)
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
+  const [isCreatingSubtask, setIsCreatingSubtask] = React.useState(false)
 
   const isDone = task.status === 'done'
 
@@ -222,11 +223,16 @@ export function TaskItem({ task, showDragHandle, isSelectMode, isSelected, onTog
                       placeholder="+ Nova subtarefa (Pressione Enter para criar)..."
                       value={newSubtaskTitle}
                       onChange={e => setNewSubtaskTitle(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && newSubtaskTitle.trim()) {
+                      onKeyDown={async e => {
+                        if (e.key === 'Enter' && newSubtaskTitle.trim() && !isCreatingSubtask) {
                           e.preventDefault();
-                          addSubtask(task.id, newSubtaskTitle);
-                          setNewSubtaskTitle('');
+                          setIsCreatingSubtask(true);
+                          try {
+                            await addSubtask(task.id, newSubtaskTitle);
+                            setNewSubtaskTitle('');
+                          } finally {
+                            setIsCreatingSubtask(false);
+                          }
                         }
                       }}
                       className="flex-1 bg-transparent text-sm font-medium border-none focus:ring-0 p-0 text-text-primary placeholder:text-text-secondary/50 outline-none w-full"

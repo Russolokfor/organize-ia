@@ -28,6 +28,7 @@ export default function BoardDetailPage() {
   const [dueTime, setDueTime] = useState('')
   const [duration, setDuration] = useState('30')
   const [priority, setPriority] = useState<'1'|'2'|'3'>('3')
+  const [isSubmittingTask, setIsSubmittingTask] = useState(false)
 
   // Board Edit State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -66,7 +67,8 @@ export default function BoardDetailPage() {
 
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!title.trim()) return
+    if (!title.trim() || isSubmittingTask) return
+    setIsSubmittingTask(true)
     
     try {
       await addTask({
@@ -84,6 +86,8 @@ export default function BoardDetailPage() {
       setPriority('3')
     } catch (err: any) {
       alert(`Erro ao criar tarefa: ${err.message}`)
+    } finally {
+      setIsSubmittingTask(false)
     }
   }
 
@@ -138,7 +142,7 @@ export default function BoardDetailPage() {
                   className="w-full bg-transparent px-4 py-3 text-base text-text-primary placeholder:text-text-secondary focus:outline-none placeholder:font-medium"
                   required
                 />
-                <Button type="submit" size="icon" className="h-12 w-12 rounded-lg shrink-0" disabled={!title.trim() || tasksLoading}>
+                <Button type="submit" size="icon" className="h-12 w-12 rounded-lg shrink-0" disabled={!title.trim() || tasksLoading || isSubmittingTask}>
                   <Plus className="w-5 h-5" />
                 </Button>
               </div>
